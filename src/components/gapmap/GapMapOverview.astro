@@ -1,0 +1,133 @@
+---
+/**
+ * Overview: a short summary that is always visible, then the full write-up in a native
+ * <details> element ("Read more"). The full text is in the page's HTML (good for search
+ * engines and readers without JavaScript) and the toggle needs no script.
+ *
+ * Every figure here comes from the original project's data or DATA_NOTES.md, or is
+ * computed from that data at build time (src/lib/gapmap.ts).
+ */
+import { KEY_FIGURES } from '../../lib/gapmap';
+
+const k = KEY_FIGURES;
+const fmt1 = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmt0 = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+---
+
+<section class="gm-overview" aria-labelledby="gm-overview-heading">
+  <h2 id="gm-overview-heading" class="visually-hidden">Overview</h2>
+  <p class="gm-overview__summary">
+    The Washington Library Gap Map shows school librarian staffing in each of Washington’s {k.count} school districts,
+    using staffing data that districts report to the Office of Superintendent of Public Instruction (OSPI) for the
+    2015–16 through 2024–25 school years. In 2024–25, {k.zeroLatest} of the {k.count} districts ({k.zeroPctLatest}%) reported
+    no librarian on staff.
+  </p>
+
+  <details class="gm-overview__more">
+    <summary>Read more</summary>
+    <div class="gm-overview__body">
+      <h3>What the tool shows</h3>
+      <p>
+        The map shades each district by its librarian staffing in 2024–25: at least one full-time-equivalent librarian, a
+        part-time librarian, or none. Selecting a district, on the map, through the search box, or from the table, opens
+        a report with its staffing figures and its year-by-year history next to the averages for its locale group and for
+        the state.
+      </p>
+      <p>
+        The locale charts compare Washington’s six locale groups, from Distant Rural to Large Urban, in any year from
+        2015–16 to 2024–25, and the table lists every district and can be sorted by any column.
+      </p>
+
+      <h3>Why it was made</h3>
+      <p>
+        OSPI publishes district staffing data each year. This tool brings ten years of that publicly available data
+        together in one place, so anyone can look up a single district, compare it with others, and see how staffing has
+        changed over time.
+      </p>
+
+      <h3>Changes from 2015–16 to 2024–25</h3>
+      <p>
+        Statewide, librarian staffing fell from {fmt1(k.fteFirst)} full-time-equivalent positions in 2015–16 to
+        {' '}{fmt1(k.fteLatest)} in 2024–25, a decline of about {fmt0(Math.abs(k.fteChangePct))}%. Over the same period, the number of
+        districts reporting no librarian rose from {k.zeroFirst} ({k.zeroPctFirst}%) to {k.zeroLatest} ({k.zeroPctLatest}%). Among the
+        {' '}{k.districtsWithLibrarian} districts that reported a librarian in 2024–25, the median was about
+        {' '}{fmt0(k.medianStudentsPerLibrarian)} students per librarian.
+      </p>
+
+      <h3>Differences by locale</h3>
+      <p>
+        Districts are grouped using the National Center for Education Statistics (NCES) locale codes. In 2024–25, 88% of
+        Distant Rural districts (123 of 139) reported no librarian, compared with 31% of Suburban districts (15 of 49).
+        Distant Rural districts make up nearly half of Washington’s districts, so statewide averages are weighted toward
+        them.
+      </p>
+
+      <h3>Context</h3>
+      <p>
+        The original project also looked at reading results over the same years. On Washington’s Smarter Balanced
+        English language arts test, the statewide share of fourth graders meeting the reading standard was 56.7% in
+        2015–16 and 49.4% in 2024–25, according to OSPI; no test was given in 2019–20 because of COVID-19. On the National
+        Assessment of Educational Progress (NAEP), Washington’s lead over the national average in reading narrowed after
+        2017 in both grades, and in fourth grade Washington scored slightly below the national average in 2019 and 2022.
+      </p>
+      <p>
+        Reading results and librarian staffing both changed over this period, but this data cannot show cause and effect:
+        it does not show whether changes in staffing affected reading results. Reading results depend on many factors,
+        including family income, which this analysis does not account for.
+      </p>
+    </div>
+  </details>
+</section>
+
+<style>
+  .gm-overview {
+    max-width: var(--prose-width);
+  }
+  .gm-overview__summary {
+    font-size: var(--text-lg);
+    line-height: 1.6;
+    margin-bottom: var(--space-4);
+  }
+  .gm-overview__more summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-link);
+    text-decoration: underline;
+    text-decoration-color: var(--color-link-underline);
+    text-decoration-thickness: var(--underline-rest);
+    text-underline-offset: 0.25em;
+  }
+  .gm-overview__more summary::-webkit-details-marker {
+    display: none;
+  }
+  .gm-overview__more summary::before {
+    content: '+';
+    font-weight: var(--weight-normal);
+    width: 0.8em;
+  }
+  .gm-overview__more[open] summary::before {
+    content: '−';
+  }
+  .gm-overview__more summary:hover {
+    text-decoration-color: var(--color-link-hover-mark);
+    text-decoration-thickness: var(--underline-hover);
+  }
+  .gm-overview__body {
+    margin-top: var(--space-5);
+    padding-top: var(--space-2);
+    border-top: var(--hairline) solid var(--color-hairline);
+  }
+  .gm-overview__body h3 {
+    font-size: var(--text-lg);
+    margin: var(--space-6) 0 var(--space-2);
+  }
+  .gm-overview__body p:last-child {
+    margin-bottom: 0;
+  }
+</style>

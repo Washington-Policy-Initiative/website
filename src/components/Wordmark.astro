@@ -1,0 +1,81 @@
+---
+/**
+ * The W logo mark plus the "Washington Policy Initiative" text wordmark.
+ *
+ * The W is a vector trace of the simple serif W from the old site (the only old logo
+ * allowed; the old full wordmark shows the old name and must not be used).
+ * Two versions live in src/assets/brand/: the plain W and the W on a pink tile.
+ * HEADER_LOGO in src/config/site.ts picks which one the header shows.
+ *
+ * In the header the mark and the name are ONE link to the home page, so screen readers
+ * hear a single "Washington Policy Initiative home" link instead of two duplicates.
+ * The image's alt text names the link; the visible name is hidden from assistive
+ * technology so it isn't read twice.
+ */
+import logoPlain from '../assets/brand/logo-w.svg';
+import logoTile from '../assets/brand/logo-w-tile.svg';
+import { HEADER_LOGO, SITE_NAME } from '../config/site';
+
+interface Props {
+  /** 'a' = header link with the logo mark; 'span' = plain text (footer). */
+  as?: 'a' | 'span';
+}
+const { as = 'a' } = Astro.props;
+const mark = HEADER_LOGO === 'tile' ? logoTile : logoPlain;
+---
+
+{
+  as === 'a' ? (
+    <a class="wordmark" href="/">
+      <img
+        class:list={['wordmark__mark', `wordmark__mark--${HEADER_LOGO}`]}
+        src={mark.src}
+        width={mark.width}
+        height={mark.height}
+        alt={`${SITE_NAME} home`}
+      />
+      <span class="wordmark__text" aria-hidden="true">{SITE_NAME}</span>
+    </a>
+  ) : (
+    <span class="wordmark">{SITE_NAME}</span>
+  )
+}
+
+<style>
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-serif);
+    font-weight: var(--weight-medium);
+    font-size: var(--text-lg);
+    letter-spacing: -0.005em;
+    color: var(--color-text);
+    text-decoration: none;
+    line-height: var(--leading-tight);
+  }
+  /* No underline on hover: the logo and name are a brand mark, not a text link. */
+  a.wordmark:hover {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  /*
+   * Trim the name's line box to its capital letters, so the flex row centers the
+   * letters themselves (not the empty space above caps and below descenders) on the
+   * middle of the logo. Browsers without text-box fall back to normal centering.
+   */
+  .wordmark__text {
+    line-height: 1;
+    text-box: trim-both cap alphabetic;
+  }
+  .wordmark__mark {
+    flex-shrink: 0;
+    width: auto;
+  }
+  .wordmark__mark--plain {
+    height: var(--logo-height);
+  }
+  .wordmark__mark--tile {
+    height: var(--logo-tile-size);
+  }
+</style>

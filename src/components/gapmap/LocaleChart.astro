@@ -1,0 +1,107 @@
+---
+/**
+ * Share of districts with no librarian, by locale group, for one school year (chosen
+ * with the slider). The chart is drawn by src/scripts/gapmap.ts; the written summary
+ * and the "View as table" table are its text alternatives, and the table is rendered
+ * here for 2024–25 so it's readable without JavaScript.
+ */
+import { LATEST, TIERS, YEARS, districts, yearLabel } from '../../lib/gapmap';
+
+const rows = TIERS.map((tier) => {
+  const inTier = districts.filter((d) => d.tier[LATEST] === tier);
+  const zero = inTier.filter((d) => (d.fte[LATEST] ?? 0) === 0).length;
+  return { tier, n: inTier.length, zero, pct: inTier.length ? Math.round((zero / inTier.length) * 100) : null };
+});
+---
+
+<section class="gm-section" aria-labelledby="gm-locale-heading" data-gm-locale>
+  <div class="gm-section__head">
+    <h2 id="gm-locale-heading" class="gm-section__title">By locale group</h2>
+  </div>
+  <p class="gm-section__intro">
+    Share of districts in each locale group that reported no librarian, ordered from most rural to most urban. Each bar
+    is labeled with the number of districts in the group. Move the slider to see another school year.
+  </p>
+
+  <div class="gm-slider">
+    <label for="gm-year-slider" class="gm-slider__label">School year</label>
+    <input
+      id="gm-year-slider"
+      type="range"
+      min="0"
+      max={YEARS.length - 1}
+      step="1"
+      value={LATEST}
+      aria-valuetext={yearLabel(YEARS[LATEST])}
+      disabled
+      data-gm-year-slider
+    />
+    <output for="gm-year-slider" class="gm-slider__value" data-gm-year-output>{yearLabel(YEARS[LATEST])}</output>
+  </div>
+
+  <figure class="gm-chart">
+    <figcaption class="gm-chart__caption">
+      <span class="gm-chart__summary" data-gm-locale-summary aria-live="polite"></span>
+    </figcaption>
+    <div class="gm-chart__plot" data-gm-locale-chart aria-hidden="true"></div>
+    <details class="gm-data-table">
+      <summary>View as table</summary>
+      <div class="gm-table-scroll">
+        <table>
+          <caption class="visually-hidden" data-gm-locale-table-caption>
+            Districts with no librarian, by locale group, {yearLabel(YEARS[LATEST])}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Locale group</th>
+              <th scope="col">Districts</th>
+              <th scope="col">With no librarian</th>
+              <th scope="col">Share</th>
+            </tr>
+          </thead>
+          <tbody data-gm-locale-rows>
+            {
+              rows.map((r) => (
+                <tr>
+                  <th scope="row">{r.tier}</th>
+                  <td>{r.n}</td>
+                  <td>{r.zero}</td>
+                  <td>{r.pct === null ? '—' : `${r.pct}%`}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </figure>
+</section>
+
+<style>
+  .gm-slider {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin-bottom: var(--space-5);
+    font-family: var(--font-ui);
+  }
+  .gm-slider__label {
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .gm-slider input {
+    flex: 1 1 14rem;
+    max-width: 24rem;
+    accent-color: var(--color-map-full);
+  }
+  .gm-slider__value {
+    font-family: var(--font-serif);
+    font-size: var(--text-xl);
+    font-variant-numeric: lining-nums tabular-nums;
+    min-width: 5ch;
+  }
+</style>

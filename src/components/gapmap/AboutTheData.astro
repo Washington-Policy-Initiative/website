@@ -1,0 +1,92 @@
+---
+/** About the data: sources, definitions, years, the six locale groups, and the unmapped entities. */
+import { TIER_DEFINITIONS, UNMAPPED, districts } from '../../lib/gapmap';
+---
+
+<section class="gm-section gm-about" aria-labelledby="gm-about-heading">
+  <div class="gm-section__head">
+    <h2 id="gm-about-heading" class="gm-section__title">About the data</h2>
+  </div>
+  <div class="gm-about__body">
+    <h3>Sources</h3>
+    <p>
+      Librarian and teacher staffing: Office of Superintendent of Public Instruction (OSPI), SLIDE staffing data, 2015–16
+      through 2024–25. Reading results: OSPI Report Card, Smarter Balanced English language arts assessment, including
+      OSPI’s statewide figures. Locale groups: U.S. Department of Education, National Center for Education Statistics
+      (NCES), Elementary/Secondary Information System (ELSI) locale codes. District boundaries: OSPI, via the Washington
+      Geospatial Open Data Portal (geo.wa.gov), simplified for the web.
+    </p>
+
+    <h3>What counts as having a librarian</h3>
+    <p>
+      Staffing is measured in full-time-equivalent (FTE) positions reported by each district. A district “has a
+      librarian” if it reported more than zero librarian FTE for the school year; it has “at least one full-time
+      librarian” at 1.0 FTE or more. Where a district reported no librarian FTE, ratios such as students per librarian
+      don’t apply and are shown as a dash.
+    </p>
+
+    <h3>Years covered</h3>
+    <p>
+      Staffing data covers the 2015–16 through 2024–25 school years. Reading results are shown for 2024–25 only. Statewide
+      testing did not take place in 2019–20 because of COVID-19.
+    </p>
+
+    <h3>Locale groups</h3>
+    <p>
+      Each district is placed in one of six groups based on its NCES locale code for that school year. A district’s
+      group can change from year to year when NCES updates its classifications.
+    </p>
+    <div class="gm-table-scroll">
+      <table class="gm-about__tiers">
+        <caption class="visually-hidden">The six locale groups and the NCES locale categories in each</caption>
+        <thead>
+          <tr>
+            <th scope="col">Group</th>
+            <th scope="col">NCES locale categories (codes)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            TIER_DEFINITIONS.map((t) => (
+              <tr>
+                <th scope="row">{t.tier}</th>
+                <td>{t.nces}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p>
+      “Mid-size” corresponds to NCES’s Town category. Large Urban consists solely of Seattle Public Schools, the only
+      Washington district in NCES’s large-city category. It is shown as its own group because, with its very large number
+      of schools, combining it with other city districts would distort the comparison.
+    </p>
+
+    <h3>Entities without a map shape</h3>
+    <p>
+      The data includes {districts.length} districts and entities. {UNMAPPED.length} of them have no map shape because they
+      are not geographic school districts: {UNMAPPED.join(', ')}. They are included in the search and the table. The
+      Washington State Center for Childhood Deafness and Hearing Loss has no NCES locale code, so it has no locale group.
+    </p>
+  </div>
+</section>
+
+<style>
+  .gm-about__body {
+    max-width: var(--prose-width);
+  }
+  .gm-about__body h3 {
+    font-size: var(--text-lg);
+    margin: var(--space-6) 0 var(--space-2);
+  }
+  .gm-about__body h3:first-child {
+    margin-top: 0;
+  }
+  .gm-about__body p {
+    font-size: var(--text-base);
+  }
+  .gm-about__tiers {
+    margin-bottom: var(--space-4);
+  }
+</style>

@@ -1,0 +1,128 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import PublicationCard from '../../components/PublicationCard.astro';
+import PeopleGrid from '../../components/PeopleGrid.astro';
+import ComingSoon from '../../components/ComingSoon.astro';
+import { POLICY_AREAS } from '../../config/taxonomy';
+import { getCurrentPeople, getPublications, getWorkInProgress } from '../../lib/content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('areas');
+  return POLICY_AREAS.map((area) => {
+    const entry = entries.find((e) => e.id === area.id);
+    if (!entry) throw new Error(`Missing src/content/areas/${area.id}.md`);
+    return { params: { area: area.id }, props: { entry } };
+  });
+}
+
+interface Props {
+  entry: CollectionEntry<'areas'>;
+}
+const { entry } = Astro.props;
+const area = POLICY_AREAS.find((a) => a.id === entry.id)!;
+const { Content } = await render(entry);
+
+// Each area team is led by a project lead: a Research Cohort member with extra
+// responsibility, chosen on the area in the CMS. Nothing extra shows until one is set;
+// then they appear first, under "Project lead", and the rest under "Team members".
+const current = await getCurrentPeople();
+const lead = entry.data.projectLead ? current.find((p) => p.id === entry.data.projectLead!.id) : undefined;
+const team = current.filter((p) => p.data.area === area.id && p.data.role !== 'faculty' && p.id !== lead?.id);
+const pubs = (await getPublications()).filter((p) => p.data.areas.includes(area.id));
+const wip = (await getWorkInProgress()).filter((p) => p.data.areas.includes(area.id));
+---
+
+<BaseLayout title={area.name} description={entry.data.summary}>
+  <PageHeader title={area.name} />
+
+  <div class="container area-page">
+    <div class="rich-text prose area-description">
+      <Content />
+    </div>
+
+    <section class="area-section" aria-labelledby="team-heading">
+      <h2 id="team-heading" class="section-heading">Research team</h2>
+      {
+        lead && (
+          <>
+            <div class="team-lead">
+              <h3 class="label-heading">Project lead</h3>
+              <PeopleGrid people={[lead]} showArea={false} />
+            </div>
+            <h3 class="label-heading team-members-heading">Team members</h3>
+          </>
+        )
+      }
+      <PeopleGrid people={team} showArea={false} />
+    </section>
+
+    {/* Publications: shown when there are any, or as "coming soon" when this area has nothing at all yet. */}
+    {
+      (pubs.length > 0 || wip.length === 0) && (
+    <section class="area-section" aria-labelledby="work-heading">
+      <h2 id="work-heading" class="section-heading">Publications</h2>
+      {
+        pubs.length > 0 ? (
+          <>
+            <div class="pub-list">
+              {pubs.map((pub) => (
+                <PublicationCard pub={pub} />
+              ))}
+            </div>
+            <p class="see-all text-center">
+              <a href={`/research/?area=${area.id}`}>Browse {area.name} on the Research page →</a>
+            </p>
+          </>
+        ) : (
+          <ComingSoon title="Publications coming soon." />
+        )
+      }
+    </section>
+      )
+    }
+
+    {
+      wip.length > 0 && (
+        <section class="area-section" aria-labelledby="wip-heading">
+          <h2 id="wip-heading" class="section-heading">Work in progress</h2>
+          <div class="pub-list">
+            {wip.map((pub) => (
+              <PublicationCard pub={pub} />
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .area-page {
+    padding-bottom: var(--space-7);
+  }
+  /* The area's description under its title: centered (user request, Nov 2026). */
+  .area-description {
+    text-align: center;
+  }
+  .area-section {
+    margin-top: var(--space-9);
+  }
+  .team-lead,
+  .team-members-heading {
+    text-align: center;
+  }
+  .team-members-heading {
+    margin-top: var(--space-7);
+  }
+  .pub-list {
+    max-width: var(--wide-width);
+    margin-inline: auto;
+  }
+  .see-all {
+    margin-top: var(--space-5);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+</style>

@@ -1,0 +1,129 @@
+---
+import Wordmark from './Wordmark.astro';
+import SocialIcon from './SocialIcon.astro';
+import { SITE_NAME } from '../config/site';
+import { settings, socialLinks } from '../lib/settings';
+import logoTile from '../assets/brand/logo-w-tile.svg';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <Wordmark as="span" />
+      <p class="muted site-footer__tagline">
+        A nonpartisan, student-led policy think tank at the University of Washington.
+      </p>
+    </div>
+    <div class="site-footer__nav">
+      <ul class="site-footer__links">
+        <li><a href="/contact/">Contact</a></li>
+        <li><a href="/faq/">FAQ</a></li>
+        <li><a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a></li>
+      </ul>
+      {
+        socialLinks.length > 0 && (
+          <ul class="site-footer__social" aria-label="Social media">
+            {socialLinks.map((link) => (
+              <li>
+                <a href={link.href} rel="noopener noreferrer" target="_blank">
+                  <SocialIcon name={link.id} />
+                  <span>{link.label}</span>
+                  <span class="visually-hidden"> (opens in a new tab)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </div>
+  <div class="container">
+    <div class="site-footer__legal">
+      {/* The W logo (pink tile), as in the header. Decorative here: the name follows it. */}
+      <img class="site-footer__logo" src={logoTile.src} width={logoTile.width} height={logoTile.height} alt="" />
+      <p class="muted">© {year} {SITE_NAME}</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: var(--hairline) solid var(--color-rule);
+    margin-top: var(--space-8);
+    padding-block: var(--space-6) var(--space-5);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+  }
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-5) var(--space-7);
+  }
+  .site-footer__tagline {
+    margin: var(--space-2) 0 0;
+    max-width: 26rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-base);
+    line-height: 1.5;
+  }
+  .site-footer__links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  /* Social links: a row of icon + name under the email. */
+  .site-footer__social {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-4) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+  }
+  .site-footer__social a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+  .site-footer__social a:hover {
+    color: var(--color-text);
+  }
+  .site-footer__social a:hover span {
+    text-decoration-line: underline;
+  }
+  .site-footer__links a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+  .site-footer__links a:hover {
+    color: var(--color-text);
+    text-decoration-line: underline;
+  }
+  /* Bottom row: the W tile at the bottom left, then the copyright line. */
+  .site-footer__legal {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-6) 0 0;
+    padding-top: var(--space-4);
+    border-top: var(--hairline) solid var(--color-hairline);
+    font-size: var(--text-xs);
+  }
+  .site-footer__legal p {
+    margin: 0;
+  }
+  .site-footer__logo {
+    width: var(--footer-logo-size);
+    height: var(--footer-logo-size);
+    flex-shrink: 0;
+  }
+</style>

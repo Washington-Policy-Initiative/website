@@ -1,0 +1,20 @@
+---
+/** Author names: links to current members' profiles, plain text for alumni. */
+import type { AuthorView } from '../lib/content';
+
+interface Props {
+  authors: AuthorView[];
+}
+const { authors } = Astro.props;
+---
+
+<span class="authors">
+  {
+    authors.map((author, i) => (
+      <>
+        {author.href ? <a href={author.href}>{author.name}</a> : <span>{author.name}</span>}
+        {i < authors.length - 2 ? ', ' : i === authors.length - 2 ? (authors.length > 2 ? ', and ' : ' and ') : ''}
+      </>
+    ))
+  }
+</span>

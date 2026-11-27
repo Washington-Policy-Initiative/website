@@ -1,0 +1,59 @@
+---
+import Avatar from './Avatar.astro';
+import type { AvatarSize } from '../lib/avatar';
+import { areaById, profileHref, type Person } from '../lib/content';
+
+interface Props {
+  person: Person;
+  showArea?: boolean;
+  /** Show the position title under the name (off for the Research Cohort on the Team page). */
+  showTitle?: boolean;
+  size?: AvatarSize;
+}
+const { person, showArea = true, showTitle = true, size = 'md' } = Astro.props;
+const area = person.data.area ? areaById(person.data.area) : undefined;
+---
+
+<li class:list={['person-card', `person-card--${size}`]}>
+  <Avatar person={person} size={size} />
+  <div>
+    <h3 class="person-card__name"><a href={profileHref(person)}>{person.data.name}</a></h3>
+    {showTitle && <p class="person-card__title">{person.data.title}</p>}
+    {showArea && area && <p class="person-card__area muted">{area.name}</p>}
+  </div>
+</li>
+
+<style>
+  .person-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-3);
+  }
+  .person-card__name {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-medium);
+    margin-bottom: var(--space-1);
+  }
+  .person-card--lg .person-card__name {
+    font-size: var(--text-xl);
+  }
+  .person-card__name a {
+    color: var(--color-heading);
+    text-decoration: none;
+  }
+  .person-card__name a:hover {
+    text-decoration-line: underline;
+  }
+  .person-card__title,
+  .person-card__area {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    margin: 0;
+  }
+  .person-card__title {
+    color: var(--color-text);
+  }
+</style>

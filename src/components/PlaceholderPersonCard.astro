@@ -1,0 +1,49 @@
+---
+/**
+ * An empty "To be announced" slot in a people grid. Not a person: it has no CMS entry,
+ * no profile page, and no link.
+ */
+import PhotoPlaceholder from './PhotoPlaceholder.astro';
+
+import type { AvatarSize } from '../lib/avatar';
+
+interface Props {
+  size?: AvatarSize;
+}
+const { size = 'md' } = Astro.props;
+---
+
+<li class:list={['person-card', 'person-card--placeholder', `person-card--${size}`]}>
+  <PhotoPlaceholder size={size} />
+  <div>
+    <p class="person-card__name">Cohort member</p>
+    <p class="person-card__title muted">To be announced</p>
+  </div>
+</li>
+
+<style>
+  .person-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-3);
+  }
+  .person-card__name {
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-heading);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-1);
+  }
+  .person-card--lg .person-card__name {
+    font-size: var(--text-xl);
+  }
+  .person-card__title {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    margin: 0;
+  }
+</style>

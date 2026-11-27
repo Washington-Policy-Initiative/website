@@ -1,0 +1,91 @@
+---
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { settings } from '../lib/settings';
+
+const page = await getEntry('pages', 'join');
+if (!page) throw new Error('Missing src/content/pages/join.md');
+const { Content } = await render(page);
+
+const r = settings.recruitment;
+// "Open" only counts if there's actually a form to send people to.
+const open = r.applicationsOpen && r.applicationFormUrl !== '';
+---
+
+<BaseLayout title={page.data.title} description={page.data.description}>
+  <PageHeader title={page.data.title} />
+  <div class="container join">
+    <section class="status card" aria-labelledby="status-heading">
+      {
+        open ? (
+          <>
+            <h2 id="status-heading">Applications are open{r.cohortLabel && ` for the ${r.cohortLabel}`}</h2>
+            {r.deadline && <p>Apply by {r.deadline}.</p>}
+            <div class="button-row">
+              <a class="button" href={r.applicationFormUrl} target="_blank" rel="noopener noreferrer">
+                Apply now<span class="visually-hidden"> (opens in a new tab)</span>
+              </a>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 id="status-heading">Applications are currently closed</h2>
+            {r.interestFormUrl ? (
+              <>
+                <p>Fill out our interest form and we'll let you know when the next application opens.</p>
+                <div class="button-row">
+                  <a class="button" href={r.interestFormUrl} target="_blank" rel="noopener noreferrer">
+                    Interest form<span class="visually-hidden"> (opens in a new tab)</span>
+                  </a>
+                </div>
+              </>
+            ) : (
+              <p>
+                Check back here for our next application cycle, or email us at{' '}
+                <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>.
+              </p>
+            )}
+          </>
+        )
+      }
+    </section>
+
+    <div class="rich-text prose">
+      <Content />
+    </div>
+
+    <p class="join__more text-center">
+      More questions? See our <a href="/faq/">FAQ</a>.
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .join {
+    padding-bottom: var(--space-7);
+  }
+  /* Application status: ruled above and below in plum, like a notice in a journal. */
+  .status {
+    margin-bottom: var(--space-8);
+    max-width: var(--prose-width);
+    margin-inline: auto;
+    text-align: center;
+    border-top: var(--hairline) solid var(--color-rule);
+    border-bottom: var(--hairline) solid var(--color-rule);
+    padding-block: var(--space-6);
+  }
+  .status h2 {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-3);
+  }
+  .status .button-row {
+    justify-content: center;
+  }
+  .status p:last-child {
+    margin-bottom: 0;
+  }
+  .join__more {
+    margin-top: var(--space-6);
+  }
+</style>

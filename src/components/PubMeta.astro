@@ -1,0 +1,64 @@
+---
+/**
+ * Small line above a publication title: "Research Paper · Winter 2027" plus badges.
+ * Work in progress shows only its type: it always sits under a "Work in progress" heading
+ * and its quarter is shown elsewhere. Its review badge says revisions are still underway.
+ */
+import { PUBLICATION_TYPES, QUARTERS, labelFor } from '../config/taxonomy';
+import type { Publication } from '../lib/content';
+
+interface Props {
+  pub: Publication;
+}
+const { data } = Astro.props.pub;
+const wip = data.status === 'in-progress';
+---
+
+<p class="pub-meta">
+  <span class="pub-meta__type">{labelFor(PUBLICATION_TYPES, data.type)}</span>
+  {
+    !wip && (
+      <>
+        <span aria-hidden="true">·</span>
+        <span>{labelFor(QUARTERS, data.quarter)}</span>
+      </>
+    )
+  }
+  {data.facultyReviewed && <span class="badge">{wip ? 'Faculty reviewed · revisions underway' : 'Faculty reviewed'}</span>}
+  {data.draft && <span class="badge badge--draft">Draft (dev only)</span>}
+</p>
+
+<style>
+  .pub-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-ui);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .pub-meta__type {
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+  }
+  .badge {
+    letter-spacing: 0.02em;
+    text-transform: none;
+    font-weight: var(--weight-medium);
+    border: var(--hairline) solid var(--color-tag-text);
+    color: var(--color-tag-text);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+  .badge--draft {
+    border-color: transparent;
+    background: var(--color-draft-bg);
+    color: var(--color-draft-text);
+  }
+</style>

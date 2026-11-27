@@ -1,0 +1,145 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PubMeta from '../../components/PubMeta.astro';
+import AreaTags from '../../components/AreaTags.astro';
+import AuthorList from '../../components/AuthorList.astro';
+import { POLICY_AREAS, PUBLICATION_TYPES, QUARTERS, labelFor } from '../../config/taxonomy';
+import { formatDate, getAuthors, getPublications, hasOwnPage, isoDate, type Publication } from '../../lib/content';
+
+export async function getStaticPaths() {
+  // getPublications() already excludes drafts in production, so no page is generated for them.
+  // Page types (Data Tools) link to their own page instead, so they get none here.
+  const pubs = (await getPublications()).filter(hasOwnPage);
+  return pubs.map((pub) => ({ params: { slug: pub.id }, props: { pub } }));
+}
+
+interface Props {
+  pub: Publication;
+}
+const { pub } = Astro.props;
+const { data } = pub;
+const authors = await getAuthors(pub);
+const typeLabel = labelFor(PUBLICATION_TYPES, data.type);
+// The file name readers get when they click Download.
+// Only published papers get a page, and the schema requires a PDF for those.
+const pdf = data.pdf;
+if (!pdf) throw new Error(`Published publication "${pub.id}" has no PDF.`);
+const downloadName = pdf.split('/').pop();
+---
+
+<BaseLayout title={data.title} description={data.abstract.slice(0, 155)} noindex={data.draft}>
+  <article class="container publication">
+    <p class="eyebrow"><a href="/research/">Research</a> / {typeLabel}</p>
+    <PubMeta pub={pub} />
+    <h1>{data.title}</h1>
+    <AreaTags pub={pub} />
+
+    <dl class="pub-meta">
+      <div>
+        <dt>Authors</dt>
+        <dd><AuthorList authors={authors} /></dd>
+      </div>
+      <div>
+        <dt>Published</dt>
+        <dd><time datetime={isoDate(data.date)}>{formatDate(data.date)}</time> ({labelFor(QUARTERS, data.quarter)})</dd>
+      </div>
+      <div>
+        <dt>Policy {data.areas.length > 1 ? 'areas' : 'area'}</dt>
+        <dd>
+          {
+            data.areas.map((id, i) => (
+              <>
+                {i > 0 && ', '}
+                <a href={`/areas/${id}/`}>{POLICY_AREAS.find((a) => a.id === id)?.name}</a>
+              </>
+            ))
+          }
+        </dd>
+      </div>
+      {
+        data.facultyReviewed && (
+          <div>
+            <dt>Review</dt>
+            <dd>Reviewed by a faculty advisor</dd>
+          </div>
+        )
+      }
+    </dl>
+
+    <section class="abstract prose" aria-labelledby="abstract-heading">
+      <h2 id="abstract-heading">Abstract</h2>
+      <p>{data.abstract}</p>
+    </section>
+
+    <div class="button-row">
+      {/* noopener: the PDF tab can't reach back into this page via window.opener. */}
+      <a class="button" href={pdf} target="_blank" rel="noopener">
+        View PDF<span class="visually-hidden"> (opens in a new tab)</span>
+      </a>
+      <a class="button button--secondary" href={pdf} download={downloadName}>Download PDF</a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .publication {
+    padding-block: var(--space-8) var(--space-7);
+    max-width: calc(var(--wide-width) + 2 * var(--gutter));
+  }
+  .publication h1 {
+    font-size: var(--text-title);
+    line-height: var(--leading-heading);
+    max-width: 28ch;
+    margin-bottom: var(--space-5);
+  }
+  /* Article details: label column + value, ruled top and bottom. */
+  .pub-meta {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-6) 0;
+    padding-block: var(--space-5);
+    border-block: var(--hairline) solid var(--color-hairline);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+  }
+  .pub-meta div {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: var(--space-1) var(--space-6);
+  }
+  .pub-meta dt {
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    padding-top: 0.15em;
+  }
+  .pub-meta dd {
+    margin: 0;
+  }
+  @media (max-width: 30rem) {
+    .pub-meta div {
+      grid-template-columns: 1fr;
+    }
+  }
+  .abstract {
+    margin-block: var(--space-7);
+    margin-inline: 0;
+  }
+  .abstract h2 {
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-3);
+  }
+  .abstract p {
+    font-size: var(--text-lg);
+    line-height: 1.6;
+  }
+</style>

@@ -1,0 +1,45 @@
+---
+/** Member photo (through Astro's image pipeline, which strips metadata) or the placeholder. */
+import { Image } from 'astro:assets';
+import PhotoPlaceholder from './PhotoPlaceholder.astro';
+import type { Person } from '../lib/content';
+import { AVATAR_PX, type AvatarSize } from '../lib/avatar';
+
+interface Props {
+  person: Person;
+  size?: AvatarSize;
+}
+const { person, size = 'md' } = Astro.props;
+const px = AVATAR_PX[size];
+---
+
+{
+  person.data.photo ? (
+    <Image
+      src={person.data.photo}
+      alt={person.data.name}
+      width={px}
+      height={px}
+      class:list={['avatar-img', `avatar-img--${size}`]}
+    />
+  ) : (
+    <PhotoPlaceholder size={size} />
+  )
+}
+
+<style>
+  .avatar-img {
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    aspect-ratio: 1;
+  }
+  .avatar-img--md {
+    width: var(--avatar-size);
+  }
+  .avatar-img--ml {
+    width: var(--avatar-size-ml);
+  }
+  .avatar-img--lg {
+    width: var(--avatar-size-lg);
+  }
+</style>

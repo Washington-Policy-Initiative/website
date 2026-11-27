@@ -1,0 +1,468 @@
+---
+import { getCollection, getEntry, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PublicationCard from '../components/PublicationCard.astro';
+import ComingSoon from '../components/ComingSoon.astro';
+import { POLICY_AREAS } from '../config/taxonomy';
+import { HOME_RECENT_COUNT } from '../config/site';
+import { getPublications, getWorkInProgress } from '../lib/content';
+import rainier from '../assets/site/mt-rainier.jpg';
+
+const home = await getEntry('pages', 'home');
+if (!home) throw new Error('Missing src/content/pages/home.md');
+const { Content } = await render(home);
+/* The optional "Intro text" (page body) shows under the mission only if it has content. */
+const hasIntro = Boolean(home.body?.trim());
+
+const areas = await getCollection('areas');
+const orderedAreas = POLICY_AREAS.map((a) => ({ ...a, entry: areas.find((e) => e.id === a.id) }));
+
+const pubs = await getPublications();
+const recent = pubs.slice(0, HOME_RECENT_COUNT);
+/* Until there's finished work, the section shows work in progress instead of "coming soon". */
+/* Work in progress is always shown too (below any finished work), newest quarter first. */
+const wipPreview = (await getWorkInProgress()).slice(0, HOME_RECENT_COUNT);
+---
+
+<BaseLayout description={home.data.description}>
+  {/*
+    Full-screen opening: the photo fills the screen (the header sits on top of its upper
+    edge), and the title, tagline, and buttons sit on a frosted panel in front of it.
+    The photo is decorative here (alt=""), but its CC BY-SA credit stays visible.
+  */}
+  <section class="hero hero--cover" aria-labelledby="hero-title">
+    <Image
+      class="hero__bg"
+      src={rainier}
+      alt=""
+      widths={[800, 1280, 1920, 2560, 3200, 3840]}
+      sizes="(max-aspect-ratio: 3/2) 190vh, 140vw"
+      loading="eager"
+      fetchpriority="high"
+    />
+    {/* Title above the mountain; tagline and buttons below it. */}
+    <div class="hero__above">
+      <h1 id="hero-title" class="hero__title">{home.data.title}</h1>
+    </div>
+    <div class="hero__below">
+      {home.data.tagline && <p class="lede hero__lede">{home.data.tagline}</p>}
+      <div class="button-row">
+        <a class="button" href="/research/">See our research</a>
+        <a class="button button--secondary hero__join" href="/join/">Join WPI</a>
+      </div>
+    </div>
+    <p class="hero__credit">
+      Photo: <a href="https://commons.wikimedia.org/wiki/File:Mt._Rainier,_black_and_white_from_airplane.jpg"
+        rel="noopener noreferrer">Sage Ross</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/"
+        rel="license noopener noreferrer">CC BY-SA 2.0</a>. Resized and cropped.
+    </p>
+  </section>
+
+  {
+    home.data.mission && (
+      <section class="section container">
+        <h2 class="section-heading">Our mission</h2>
+        <p class="mission">{home.data.mission}</p>
+        {hasIntro && (
+          <div class="rich-text mission-body">
+            <Content />
+          </div>
+        )}
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="container area-cards-container">
+      <h2 class="section-heading">Policy areas</h2>
+      <ul class="grid-4 area-cards">
+        {
+          orderedAreas.map((area) => (
+            <li class="card">
+              <h3>
+                <a href={`/areas/${area.id}/`}>{area.name}</a>
+              </h3>
+              <p class="muted area-summary">{area.entry?.data.summary}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section container home-recent">
+    {
+      recent.length > 0 && (
+        <>
+          <h2 class="section-heading">Recent work</h2>
+          <div class="recent-grid">
+            {recent.map((pub) => (
+              <PublicationCard pub={pub} variant="card" showMeta={false} />
+            ))}
+          </div>
+          <p class="see-all text-center">
+            <a href="/research/">All of our work →</a>
+          </p>
+        </>
+      )
+    }
+    {
+      wipPreview.length > 0 && (
+        <div class:list={{ 'home-wip': recent.length > 0 }}>
+          <h2 class="section-heading">Work in progress</h2>
+          <div class="recent-grid">
+            {wipPreview.map((pub) => (
+              <PublicationCard pub={pub} variant="card" showMeta={false} />
+            ))}
+          </div>
+          <p class="see-all text-center">
+            <a href="/research/#work-in-progress">All work in progress →</a>
+          </p>
+        </div>
+      )
+    }
+    {
+      recent.length === 0 && wipPreview.length === 0 && (
+        <div class="home-empty">
+          <h2 class="section-heading">Recent work</h2>
+          <ComingSoon title="Our first publications are coming soon.">
+            <p>Our research teams are at work across all four policy areas.</p>
+          </ComingSoon>
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  /*
+   * Full-screen opening. The section starts at the very top of the page; the header
+   * (made to overlay it in Header.astro) covers its top edge, so the photo fills
+   * everything below the header. Mt. Rainier is centred in that space, with the title
+   * above it and the tagline and buttons below it.
+   */
+  .hero {
+    /*
+     * Where the mountain is in the photo, as fractions of the photo's width/height:
+     * the centre of the snow-covered cone (x, y), the summit (top), and where the cone
+     * meets the ridges (bottom). Measured from src/assets/site/mt-rainier.jpg;
+     * update these if the photo changes.
+     */
+    --mtn-x: 0.45;
+    --mtn-y: 0.52;
+    --mtn-top: 0.42;
+    --mtn-bottom: 0.61;
+    --photo-ratio: 1.5006; /* 3840 / 2559 */
+    --hero-pad-bottom: var(--space-8);
+    /* Where the mountain's centre goes: the middle of the first screen below the header. */
+    --anchor-y: calc(
+      var(--hero-header-clearance) + (100svh - var(--hero-header-clearance) - var(--hero-pad-bottom)) / 2
+    );
+    /*
+     * The photo's drawn size: just large enough that, with the mountain pinned at the
+     * anchor, it still reaches every edge (the largest of these three widths).
+     */
+    --photo-w: max(
+      /* both side edges */ calc(100vw / (2 * min(var(--mtn-x), 1 - var(--mtn-x)))),
+      /* the top edge */ calc(var(--anchor-y) / var(--mtn-y) * var(--photo-ratio)),
+      /* the bottom edge, below the fold */
+        calc((100svh + var(--hero-page-fade) - var(--anchor-y)) / (1 - var(--mtn-y)) * var(--photo-ratio))
+    );
+    --photo-h: calc(var(--photo-w) / var(--photo-ratio));
+    /* How far the summit and the cone's base are from the anchor, plus breathing room. */
+    /* Gaps between the text and the mountain. The title sits right down on the summit. */
+    --clear-gap-above: var(--space-4);
+    --clear-above: calc((var(--mtn-y) - var(--mtn-top)) * var(--photo-h) + var(--clear-gap-above));
+
+    position: relative;
+    isolation: isolate;
+    /*
+     * One screen tall plus the fade: the photo fills the first screen edge to edge, and
+     * its dissolve into the page sits just below the fold, seen only when scrolling.
+     */
+    min-height: calc(100svh + var(--hero-page-fade));
+    overflow: hidden;
+    text-align: center;
+    background: var(--color-bg);
+  }
+  .hero :global(.hero__bg) {
+    position: absolute;
+    left: 50%;
+    top: var(--anchor-y);
+    z-index: -1;
+    max-width: none;
+    width: var(--photo-w);
+    height: auto;
+    transform: translate(calc(var(--mtn-x) * -100%), calc(var(--mtn-y) * -100%));
+  }
+  /*
+   * The bottom of the photo dissolves into the page colour, so there's no hard edge
+   * where the photo ends and the page begins. Eased stops avoid a visible band.
+   */
+  .hero::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--hero-page-fade);
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-bg) 0%, transparent),
+      color-mix(in srgb, var(--color-bg) 6%, transparent) 15%,
+      color-mix(in srgb, var(--color-bg) 20%, transparent) 30%,
+      color-mix(in srgb, var(--color-bg) 50%, transparent) 50%,
+      color-mix(in srgb, var(--color-bg) 80%, transparent) 70%,
+      color-mix(in srgb, var(--color-bg) 94%, transparent) 85%,
+      var(--color-bg)
+    );
+  }
+  /* Title: its bottom edge sits just above the summit. */
+  .hero__above {
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: calc(100% - var(--anchor-y) + var(--clear-above));
+    z-index: 1; /* above the frost, which belongs to the block below */
+  }
+  /* Tagline and buttons: their top edge sits just below the base of the cone. */
+  /* Tagline and buttons: at the bottom of the first screen, inside the fog. */
+  .hero__below {
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: calc(var(--hero-page-fade) + var(--hero-below-inset));
+    z-index: 0;
+    isolation: isolate;
+  }
+  /*
+   * Fog rising from the bottom: the photo gets steadily blurrier and whiter toward the
+   * bottom of the screen until it is the page colour, so the photo dissolves into the
+   * page and the plum text below the mountain sits on near-white. Blur and tint ramp
+   * together because both are on this one masked layer. It reaches past the screen's
+   * bottom and sides; the hero's overflow: hidden trims it.
+   * The mask only sets transparency; `black` there means "fully visible", not a color.
+   */
+  .hero__below::after {
+    content: '';
+    position: absolute;
+    top: calc(-1 * var(--fog-rise));
+    bottom: -100vh;
+    left: -100vw;
+    right: -100vw;
+    z-index: -1;
+    background: var(--color-bg);
+    -webkit-backdrop-filter: blur(var(--fog-blur));
+    backdrop-filter: blur(var(--fog-blur));
+    /* Eased ramp: clear at the top, ~70% by the top of the tagline, solid soon after. */
+    --fog-mask: linear-gradient(
+      to bottom,
+      transparent 0,
+      rgb(0 0 0 / 0.08) calc(var(--fog-rise) * 0.25),
+      rgb(0 0 0 / 0.25) calc(var(--fog-rise) * 0.5),
+      rgb(0 0 0 / 0.5) calc(var(--fog-rise) * 0.75),
+      rgb(0 0 0 / 0.72) var(--fog-rise),
+      rgb(0 0 0 / 0.9) calc(var(--fog-rise) + var(--space-7)),
+      black calc(var(--fog-rise) + var(--space-9))
+    );
+    -webkit-mask-image: var(--fog-mask);
+    mask-image: var(--fog-mask);
+  }
+  .hero__title {
+    /* Also limited by screen height, so the title fits above the mountain on short screens. */
+    font-size: min(var(--text-display), 9svh);
+    max-width: 16ch;
+    margin: 0 auto;
+  }
+  /* A small soft shadow lifts the text off the photo. */
+  .hero__title,
+  .hero .hero__lede {
+    text-shadow: var(--hero-text-shadow);
+  }
+  /* Both buttons: a very subtle shadow lifts them off the fog (user request). */
+  .hero .button-row .button {
+    box-shadow: var(--hero-button-shadow);
+  }
+  /*
+   * "Join WPI": a light lavender box (the policy-area hover color) instead of an underline,
+   * one shade deeper on hover. Text contrast: 12.1:1 on the box, 10.1:1 when hovered.
+   */
+  .hero .hero__join {
+    background: var(--color-card-hover);
+    border-color: transparent;
+    padding-inline: var(--space-5);
+    text-decoration: none;
+  }
+  .hero .hero__join:hover {
+    background: var(--color-card-hover-strong);
+    border-color: transparent;
+    text-decoration: none;
+  }
+  /* On the photo the tagline is plum, not the lighter secondary color, for contrast. */
+  .hero .hero__lede {
+    color: var(--color-text);
+    margin-bottom: var(--space-5);
+  }
+  .hero .button-row {
+    justify-content: center;
+  }
+  /* The CC BY-SA credit, which the license requires, in the photo's corner. */
+  .hero__credit {
+    position: absolute;
+    right: var(--space-3);
+    /* Bottom corner of the first screen (above the fade), so the credit shows on arrival. */
+    bottom: calc(var(--hero-page-fade) + var(--space-3));
+    margin: 0;
+    padding: var(--space-1) var(--space-2);
+    max-width: calc(100% - 2 * var(--space-3));
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    line-height: var(--leading-ui);
+    color: var(--color-text);
+    background: var(--color-scrim-strong);
+    -webkit-backdrop-filter: blur(var(--scrim-blur));
+    backdrop-filter: blur(var(--scrim-blur));
+    border-radius: var(--radius-sm);
+  }
+  @media (max-width: 40rem) {
+    .hero__credit {
+      left: var(--space-3);
+      text-align: center;
+    }
+  }
+  /*
+   * Short screens (small phones, short laptop windows): tighter spacing around the
+   * mountain, and the credit moves just below the fold (to the bottom of the photo)
+   * so it can't collide with the buttons.
+   */
+  @media (max-height: 45rem) {
+    .hero {
+      --hero-below-inset: var(--space-6);
+    }
+    .hero .hero__lede {
+      font-size: var(--text-base);
+      margin-bottom: var(--space-4);
+    }
+    .hero__credit {
+      bottom: var(--space-3);
+    }
+  }
+  /* A short statement, set like a pull quote and centered. */
+  /*
+   * The mission statement and the paragraph(s) after it read as one centered statement:
+   * same size, line spacing, width, and alignment, with normal paragraph spacing.
+   */
+  /*
+   * Home's section labels ("Our mission", "Policy areas", "Recent work", "Work in progress")
+   * are a step larger than the site's usual 12px labels (user request), all four alike.
+   */
+  .section-heading {
+    font-size: var(--text-sm);
+  }
+  .mission,
+  .mission-body :global(p) {
+    font-size: var(--text-mission);
+    line-height: 1.45;
+    max-width: 34em;
+    margin: 0 auto var(--space-5);
+    text-align: center;
+    text-wrap: balance;
+  }
+  .mission-body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .area-summary {
+    margin: 0;
+    font-size: var(--text-base);
+    line-height: 1.55;
+  }
+  /*
+   * Policy-area cards: no lines or boxes at rest, spaced apart. The hovered or focused
+   * card gets a light lavender box with a soft drop shadow (user request). The row runs
+   * wider than the rest of the page, so the outer cards sit near the screen edges.
+   * The whole card is a link (the title's link stretches over it).
+   */
+  .area-cards-container {
+    max-width: var(--area-cards-width);
+  }
+  .area-cards {
+    gap: var(--space-4);
+  }
+  .area-cards :global(.card) {
+    position: relative;
+    border-top: 0;
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    transition:
+      background-color var(--transition-fast),
+      box-shadow var(--transition-fast);
+  }
+  .area-cards :global(.card:hover),
+  .area-cards :global(.card:focus-within) {
+    background: var(--color-card-hover);
+    box-shadow: var(--card-shadow);
+  }
+  .area-cards :global(.card h3 a::after) {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  /* The lavender box is the hover signal, so the title isn't underlined as well. */
+  .area-cards :global(.card h3 a),
+  .area-cards :global(.card h3 a:hover) {
+    text-decoration: none;
+  }
+  .area-cards :global(.card h3 a:focus-visible) {
+    outline: none;
+  }
+  .area-cards :global(.card:has(a:focus-visible)) {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: calc(-1 * var(--focus-width));
+  }
+  /* Up to three across; a short last row is centered, never left on its own at the side. */
+  .recent-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-7) var(--space-6);
+    justify-content: center;
+  }
+  .recent-grid > :global(*) {
+    flex: 0 1 20rem;
+    min-width: 0;
+  }
+  /*
+   * Home's only divider lines (user request, Nov 2026): one between Policy areas and Recent
+   * work, and one between Recent work and Work in progress. Everything else is space.
+   */
+  /*
+   * The line between Policy areas and Recent work is the short kind (content width, like
+   * the Work in progress one), drawn at the top of Recent work's column. The section's top
+   * padding moves below the line so it sits midway between the two.
+   */
+  .home-recent {
+    padding-top: 0;
+  }
+  .home-recent::before {
+    content: '';
+    display: block;
+    border-top: var(--hairline) solid var(--color-hairline);
+    margin-bottom: var(--space-8);
+  }
+  .home-empty :global(.notice) {
+    border-block: 0;
+  }
+  /* Work in progress below finished work: set apart by space and a hairline. */
+  .home-wip {
+    margin-top: var(--space-8);
+    padding-top: var(--space-8);
+    border-top: var(--hairline) solid var(--color-hairline);
+  }
+  .see-all {
+    margin-top: var(--space-7);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+</style>

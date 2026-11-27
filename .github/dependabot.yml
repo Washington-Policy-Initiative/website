@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait 14 days after a release before proposing it: most malicious package versions
+    # are caught and pulled within days. Security updates are not delayed by this.
+    cooldown:
+      default-days: 14
+    groups:
+      astro:
+        patterns: ["astro", "@astrojs/*"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14

@@ -1,0 +1,178 @@
+---
+/**
+ * Every district in one sortable table. Rendered here for 2024–25 (alphabetical), so it
+ * works without JavaScript and is fully indexable; src/scripts/gapmap.ts adds sorting
+ * (buttons in the column headers, with aria-sort) and the year selector.
+ * District names are real links (?district=…), so they can be opened, copied, or shared.
+ */
+import { LATEST, YEARS, districts, fteChangeSinceFirst, yearLabel } from '../../lib/gapmap';
+
+const COLUMNS = [
+  { key: 'name', label: 'District', numeric: false },
+  { key: 'county', label: 'County', numeric: false },
+  { key: 'tier', label: 'Locale group', numeric: false },
+  { key: 'fte', label: 'Librarian FTE', numeric: true },
+  { key: 'spl', label: 'Students per librarian', numeric: true },
+  { key: 'lps', label: 'Librarians per school', numeric: true },
+  { key: 'change', label: 'Change in FTE since 2015–16', numeric: true },
+] as const;
+
+const fmt = (v: number | null, digits: number) =>
+  v === null ? '—' : v.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+const pct = (v: number | null) => (v === null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(Math.round(v))}%`);
+---
+
+<section class="gm-section" aria-labelledby="gm-table-heading" data-gm-table>
+  <div class="gm-section__head">
+    <h2 id="gm-table-heading" class="gm-section__title">All districts</h2>
+    <div class="gm-table-controls">
+      <label for="gm-table-year">School year</label>
+      <select id="gm-table-year" data-gm-table-year disabled>
+        {
+          YEARS.map((y, i) => (
+            <option value={i} selected={i === LATEST}>
+              {yearLabel(y)}
+            </option>
+          ))
+        }
+      </select>
+    </div>
+  </div>
+  <p class="gm-section__intro">
+    All {districts.length} districts and entities in the data. Select a column heading to sort by it; select a district’s
+    name to open its report. A dash means the figure doesn’t apply (for example, students per librarian when a district
+    has no librarian).
+  </p>
+  <p class="visually-hidden" aria-live="polite" data-gm-table-status></p>
+
+  <div class="gm-table-scroll" tabindex="0" role="region" aria-label="Table of all districts (scrolls)">
+    <table class="gm-table">
+      <caption class="visually-hidden" data-gm-table-caption>
+        All districts, {yearLabel(YEARS[LATEST])}, sorted by district name
+      </caption>
+      <thead>
+        <tr>
+          {
+            COLUMNS.map((c) => (
+              <th scope="col" class:list={{ 'is-numeric': c.numeric }} aria-sort={c.key === 'name' ? 'ascending' : undefined}>
+                <button type="button" class="gm-sort" data-gm-sort={c.key} disabled>
+                  {c.label}
+                  <span class="gm-sort__icon" aria-hidden="true"></span>
+                </button>
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody data-gm-table-body>
+        {
+          districts.map((d) => (
+            <tr data-gm-row={d.id}>
+              <th scope="row">
+                <a href={`?district=${d.id}#district-report`} data-gm-pick={d.id}>
+                  {d.name}
+                </a>
+              </th>
+              <td>{d.county ?? '—'}</td>
+              <td>{d.tier[LATEST] ?? '—'}</td>
+              <td class="is-numeric">{fmt(d.fte[LATEST], 2)}</td>
+              <td class="is-numeric">{fmt(d.studentsPerLibrarian[LATEST], 0)}</td>
+              <td class="is-numeric">{fmt(d.librariansPerSchool[LATEST], 2)}</td>
+              <td class="is-numeric">{pct(fteChangeSinceFirst(d))}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  .gm-table-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-ui);
+  }
+  .gm-table-controls label {
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .gm-table-controls select {
+    font: inherit;
+    font-size: var(--text-sm);
+    padding: var(--space-1) var(--space-3);
+    border: var(--border-width) solid var(--color-control-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  .gm-table-scroll[tabindex] {
+    max-height: 36rem;
+    overflow: auto;
+  }
+  .gm-table {
+    min-width: 50rem;
+  }
+  .gm-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-bg);
+    vertical-align: bottom;
+  }
+  .gm-sort {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: var(--space-1);
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    text-align: inherit;
+    cursor: pointer;
+  }
+  .gm-sort:disabled {
+    cursor: default;
+  }
+  .is-numeric .gm-sort {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+  .gm-sort:not(:disabled):hover {
+    color: var(--color-text);
+    text-decoration: underline;
+    text-decoration-color: var(--color-link-hover-mark);
+    text-decoration-thickness: var(--underline-hover);
+  }
+  /* Sort direction marker: shown on the sorted column only. */
+  .gm-sort__icon {
+    width: 0.6em;
+    flex-shrink: 0;
+  }
+  th[aria-sort='ascending'] .gm-sort__icon::before {
+    content: '▲';
+    font-size: 0.7em;
+  }
+  th[aria-sort='descending'] .gm-sort__icon::before {
+    content: '▼';
+    font-size: 0.7em;
+  }
+  .gm-table tbody th {
+    font-weight: var(--weight-normal);
+  }
+  /* Short values (county, locale group, figures) stay on one line. */
+  .gm-table :global(td) {
+    white-space: nowrap;
+  }
+  .gm-table tbody th a {
+    text-decoration-color: var(--color-link-underline);
+  }
+  :global(.gm-table tr.is-selected) {
+    background: var(--color-tag-bg);
+  }
+</style>

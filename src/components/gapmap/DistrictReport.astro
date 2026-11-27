@@ -1,0 +1,219 @@
+---
+/**
+ * District report. The structure is plain HTML; src/scripts/gapmap.ts fills in the
+ * values (as text, never as HTML) when a district is chosen on the map, in the search,
+ * or in the table. Until then the empty state explains how to choose one.
+ */
+---
+
+<section class="gm-section gm-report" id="district-report" aria-labelledby="gm-report-heading" data-gm-report>
+  <div class="gm-section__head">
+    <h2 id="gm-report-heading" class="gm-section__title">District report</h2>
+  </div>
+
+  <p class="gm-report__empty" data-gm-report-empty>
+    Choose a district on the map, search for one above, or pick one from the{' '}
+    <a href="#gm-table-heading">table of all districts</a> below.
+  </p>
+
+  <div class="gm-report__body" data-gm-report-body hidden>
+    <h3 class="gm-report__name" tabindex="-1" data-gm-r="name"></h3>
+    <p class="gm-report__meta" data-gm-r="meta"></p>
+
+    <h4 class="gm-report__label">Librarian staffing, 2024–25</h4>
+    <dl class="gm-figures">
+      <div>
+        <dt>Librarian FTE</dt>
+        <dd data-gm-r="fte"></dd>
+      </div>
+      <div>
+        <dt>Students per librarian</dt>
+        <dd data-gm-r="spl"></dd>
+      </div>
+      <div>
+        <dt>Librarians per school</dt>
+        <dd data-gm-r="lps"></dd>
+      </div>
+      <div>
+        <dt>Change in FTE since 2015–16</dt>
+        <dd data-gm-r="change"></dd>
+      </div>
+    </dl>
+
+    <figure class="gm-chart">
+      <figcaption class="gm-chart__caption">
+        <span class="gm-report__label">Librarian FTE, 2015–16 to 2024–25</span>
+        <span class="gm-chart__summary" data-gm-r="historySummary"></span>
+      </figcaption>
+      {/*
+        Hovering (or tapping) a year shows all three values for it. Mouse/touch only: the
+        chart is hidden from screen readers, and "View as table" below has the same numbers.
+      */}
+      <div class="gm-chart__frame">
+        <div class="gm-chart__plot" data-gm-r="historyChart" aria-hidden="true"></div>
+        <div class="gm-chart__tooltip" data-gm-r="historyTip" aria-hidden="true" hidden></div>
+      </div>
+      <details class="gm-data-table">
+        <summary>View as table</summary>
+        <div class="gm-table-scroll">
+          <table>
+            <caption class="visually-hidden">Librarian FTE by year</caption>
+            <thead>
+              <tr>
+                <th scope="col">School year</th>
+                <th scope="col" data-gm-r="historyDistrictHead">District</th>
+                <th scope="col" data-gm-r="historyGroupHead">Locale group average</th>
+                <th scope="col">Statewide average</th>
+              </tr>
+            </thead>
+            <tbody data-gm-r="historyRows"></tbody>
+          </table>
+        </div>
+      </details>
+    </figure>
+
+    <h4 class="gm-report__label">Reading results, 2024–25 (for context)</h4>
+    <div class="gm-table-scroll">
+      <table class="gm-reading">
+        <caption class="visually-hidden">Percent of students meeting the reading standard, 2024–25</caption>
+        <thead>
+          <tr>
+            <td></td>
+            <th scope="col" data-gm-r="readingDistrictHead">District</th>
+            <th scope="col" data-gm-r="readingGroupHead">Group average</th>
+            <th scope="col">Washington</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Grade 4</th>
+            <td data-gm-r="g4"></td>
+            <td data-gm-r="g4Group"></td>
+            <td data-gm-r="g4State"></td>
+          </tr>
+          <tr>
+            <th scope="row">Grade 8</th>
+            <td data-gm-r="g8"></td>
+            <td data-gm-r="g8Group"></td>
+            <td data-gm-r="g8State"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="gm-report__notes">
+      <p>
+        Percent of students meeting the state standard (Level 3 or 4) on Washington’s Smarter Balanced English language
+        arts test. Source: OSPI. <span data-gm-r="groupNote"></span>
+      </p>
+      <p data-gm-r="unavailableNote" hidden>
+        Not available: OSPI does not publish results when too few students are tested, and some districts do not serve
+        every grade.
+      </p>
+      <p class="gm-report__caveat">
+        These results are shown for context only. This data can’t show whether librarian staffing affects reading
+        results. Reading results depend on many factors, including family income, which this tool doesn’t account for.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .gm-report__empty {
+    font-style: italic;
+    color: var(--color-text-muted);
+    padding: var(--space-6) 0;
+    margin: 0;
+    border-bottom: var(--hairline) solid var(--color-hairline);
+  }
+  .gm-report__name {
+    font-size: var(--text-2xl);
+    margin: 0 0 var(--space-1);
+  }
+  .gm-report__name:focus {
+    outline: none;
+  }
+  .gm-report__name:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: var(--focus-offset);
+  }
+  .gm-report__meta {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-6);
+  }
+  .gm-report__label {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    margin: var(--space-6) 0 var(--space-3);
+  }
+  .gm-figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: var(--space-4) var(--space-6);
+    margin: 0;
+  }
+  .gm-figures div {
+    border-top: var(--hairline) solid var(--color-rule);
+    padding-top: var(--space-3);
+  }
+  .gm-figures dt {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    order: 2;
+  }
+  .gm-figures dd {
+    margin: 0 0 var(--space-1);
+    font-family: var(--font-serif);
+    font-size: var(--text-2xl);
+    line-height: var(--leading-tight);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .gm-figures div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+  }
+  :global(.gm-figures dd small) {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: var(--space-1);
+  }
+  /* Narrow enough that each row reads as one line of figures. */
+  .gm-reading th[scope='row'] {
+    white-space: nowrap;
+  }
+  .gm-report :global(.gm-reading) {
+    width: auto;
+    max-width: 42rem;
+  }
+  .gm-reading td:first-child {
+    border: 0;
+  }
+  .gm-report__notes {
+    max-width: var(--prose-width);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    margin-top: var(--space-3);
+  }
+  .gm-report__notes p {
+    margin-bottom: var(--space-3);
+  }
+  .gm-report__caveat {
+    color: var(--color-text);
+    border-left: var(--hairline) solid var(--color-rule);
+    padding-left: var(--space-4);
+  }
+</style>

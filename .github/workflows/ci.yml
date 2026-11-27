@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: this workflow only needs to read the code.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Actions are pinned to full commit SHAs, not tags: a tag can be moved to point
+      # at different code, a SHA can't. Dependabot keeps these updated.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # npm ci installs exactly what package-lock.json says (verifying integrity hashes)
+      # and fails if package.json and the lockfile disagree.
+      - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+      - name: Type, content, and image-metadata checks
+        run: npm run check
+      - name: Build
+        run: npm run build
+      - name: No inline scripts or styles in built HTML (CSP)
+        run: |
+          if grep -rlE '<script(>| [^>]*>)[^<]+</script>|<style[ >]| style="' dist --include='*.html'; then
+            echo "Inline <script>/<style> or style= attribute found; the CSP would block it." >&2
+            exit 1
+          fi

@@ -1,0 +1,99 @@
+---
+/**
+ * The filter controls for one list on /research (Publications, or Work in progress).
+ * Each list has its own panel; src/scripts/research-filters.ts wires each one to the
+ * items in its own section. Hidden until that script runs, so visitors without
+ * JavaScript don't see controls that do nothing.
+ */
+interface FilterOption {
+  value: string;
+  label: string;
+}
+interface Filter {
+  key: 'type' | 'area' | 'quarter';
+  label: string;
+  options: FilterOption[];
+}
+interface Props {
+  filters: Filter[];
+}
+const { filters } = Astro.props;
+---
+
+<div class="filters" data-filters hidden>
+  {
+    filters.map((f) => (
+      <label class="filter">
+        <span class="filter__label">{f.label}</span>
+        <select data-filter={f.key}>
+          <option value="">All</option>
+          {f.options.map((o) => (
+            <option value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </label>
+    ))
+  }
+  <button type="button" class="filter-reset" data-filter-reset hidden>Clear filters</button>
+</div>
+
+<style>
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3) var(--space-4);
+    font-family: var(--font-ui);
+  }
+  .filter {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .filter__label {
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  /* Form controls need 3:1 against the page, so their border is plum, not a hairline. */
+  .filter select {
+    font: inherit;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-control-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    min-width: 9rem;
+  }
+  .filter-reset {
+    font: inherit;
+    font-size: var(--text-sm);
+    background: none;
+    border: none;
+    color: var(--color-link);
+    text-decoration: underline;
+    text-decoration-color: var(--color-link-underline);
+    text-decoration-thickness: var(--underline-rest);
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+    padding: var(--space-2) 0;
+  }
+  .filter-reset:hover {
+    text-decoration-color: var(--color-link-hover-mark);
+    text-decoration-thickness: var(--underline-hover);
+    text-underline-offset: 0.06em;
+  }
+  /* Phones: filters stack full-width under the heading. */
+  @media (max-width: 40rem) {
+    .filters,
+    .filter {
+      width: 100%;
+    }
+    .filter select {
+      width: 100%;
+    }
+  }
+</style>

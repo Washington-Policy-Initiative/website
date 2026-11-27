@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SocialIcon from '../components/SocialIcon.astro';
+import { settings, socialLinks } from '../lib/settings';
+
+/* Split the address so a narrow screen wraps it before the @, not mid-word. */
+const [emailUser, emailDomain] = settings.contactEmail.split('@');
+---
+
+<BaseLayout
+  title="Contact"
+  description="Contact the Washington Policy Initiative."
+>
+  <PageHeader title="Contact" />
+  <div class="container contact">
+    <p class="contact__intro">
+      If you're interested in working with us, or you'd like to ask about our research, reach out to us at:
+    </p>
+    <p class="contact__email">
+      <a href={`mailto:${settings.contactEmail}`}>{emailUser}<wbr />@{emailDomain}</a>
+    </p>
+
+    {
+      socialLinks.length > 0 && (
+        <section aria-labelledby="social-heading">
+          <p class="contact__intro contact__intro--social">Keep up to date with what we're working on by following us on social media.</p>
+          <h2 id="social-heading">Follow us</h2>
+          <ul class="contact__social">
+            {socialLinks.map((link) => (
+              <li>
+                <a href={link.href} rel="noopener noreferrer" target="_blank">
+                  <SocialIcon name={link.id} />
+                  <span>{link.label}</span>
+                  <span class="visually-hidden"> (opens in a new tab)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .contact {
+    padding-bottom: var(--space-7);
+    text-align: center;
+  }
+  .contact__intro {
+    max-width: 44rem;
+    text-wrap: balance;
+    margin: 0 auto var(--space-3);
+    color: var(--color-text-muted);
+  }
+  .contact__email {
+    font-size: var(--text-xl);
+    overflow-wrap: break-word;
+  }
+  .contact h2 {
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  /* The sentence comes first, then the "Follow us" label right above the links (user request). */
+  .contact__intro--social {
+    margin-top: var(--space-7);
+  }
+  .contact__social {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3) var(--space-6);
+    flex-wrap: wrap;
+    font-family: var(--font-ui);
+    font-size: var(--text-lg);
+  }
+  .contact__social a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+</style>

@@ -1,0 +1,92 @@
+---
+import PersonCard from './PersonCard.astro';
+import PlaceholderPersonCard from './PlaceholderPersonCard.astro';
+import ComingSoon from './ComingSoon.astro';
+import type { Person } from '../lib/content';
+import type { AvatarSize } from '../lib/avatar';
+
+interface Props {
+  people: Person[];
+  showArea?: boolean;
+  /** Show each person's position title under their name. */
+  showTitle?: boolean;
+  emptyTitle?: string;
+  /** Photo size: 'lg' for the Executive Board, 'ml' for the Research Cohort. */
+  size?: AvatarSize;
+  /** Rows of 3 or 4 on wider screens; omit for the default flowing layout. */
+  columns?: 3 | 4;
+  /** Number of "To be announced" slots to add after the real people. */
+  placeholders?: number;
+}
+const {
+  people,
+  showArea = true,
+  showTitle = true,
+  emptyTitle = 'Announced soon',
+  size = 'md',
+  columns,
+  placeholders = 0,
+} = Astro.props;
+const slots = Array.from({ length: Math.max(0, placeholders) });
+---
+
+{
+  people.length + slots.length > 0 ? (
+    <ul class:list={['grid', 'people-grid', { 'people-grid--rows': columns !== undefined, 'people-grid--3': columns === 3, 'people-grid--4': columns === 4, 'people-grid--roomy': size !== 'md' }]}>
+      {people.map((person) => (
+        <PersonCard person={person} showArea={showArea} showTitle={showTitle} size={size} />
+      ))}
+      {slots.map(() => (
+        <PlaceholderPersonCard size={size} />
+      ))}
+    </ul>
+  ) : (
+    <ComingSoon title={emptyTitle} />
+  )
+}
+
+<style>
+  /* Fixed-width columns centered as a group, so a short last row sits in the middle. */
+  .people-grid {
+    grid-template-columns: repeat(auto-fit, minmax(0, 12rem));
+    justify-content: center;
+  }
+  .people-grid--roomy {
+    row-gap: var(--space-7);
+  }
+  /*
+   * Fixed rows of 3 or 4. Flexbox (not a fixed-column grid) so a short row, like a
+   * single faculty advisor, is centered instead of sitting in the left column.
+   */
+  .people-grid--rows {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-inline: auto;
+    /* Must match the gap used in the flex-basis math below. */
+    column-gap: var(--space-5);
+  }
+  .people-grid--rows > :global(li) {
+    flex: 0 0 100%; /* phones: one per row */
+  }
+  .people-grid--3 {
+    max-width: calc(3 * 16rem + 2 * var(--space-5));
+  }
+  .people-grid--4 {
+    max-width: calc(4 * 14rem + 3 * var(--space-5));
+  }
+  @media (min-width: 40rem) {
+    .people-grid--3 > :global(li) {
+      flex-basis: calc((100% - 2 * var(--space-5)) / 3);
+    }
+    /* Tablets: 2 per row, so the photos don't get squeezed. */
+    .people-grid--4 > :global(li) {
+      flex-basis: calc((100% - var(--space-5)) / 2);
+    }
+  }
+  @media (min-width: 56rem) {
+    .people-grid--4 > :global(li) {
+      flex-basis: calc((100% - 3 * var(--space-5)) / 4);
+    }
+  }
+</style>

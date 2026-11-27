@@ -1,0 +1,101 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import PeopleGrid from '../../components/PeopleGrid.astro';
+import { COHORT_PLACEHOLDER_COUNT } from '../../config/site';
+import { POLICY_AREAS } from '../../config/taxonomy';
+import { byLastName, facultyLabel, getCurrentPeople } from '../../lib/content';
+
+// Current members only: alumni are never listed.
+const people = await getCurrentPeople();
+const exec = people.filter((p) => p.data.role === 'exec');
+// The Research Cohort is listed alphabetically by last name.
+const cohort = people.filter((p) => p.data.role === 'cohort').sort(byLastName);
+const faculty = people.filter((p) => p.data.role === 'faculty');
+const facultyText = facultyLabel(faculty.length);
+
+const cohortByArea = POLICY_AREAS.map((area) => ({
+  area,
+  members: cohort.filter((p) => p.data.area === area.id),
+}));
+// Cohort members without an area (shouldn't happen, but never hide someone silently).
+const cohortUnassigned = cohort.filter((p) => !p.data.area);
+// Until any cohort member has a policy area, show the cohort as one alphabetical group
+// (no area headings, no "Other" heading).
+const groupByArea = cohort.some((p) => p.data.area);
+---
+
+<BaseLayout
+  title="Team"
+  description={`The students and ${facultyText.phrase} of the Washington Policy Initiative.`}
+>
+  <PageHeader title="Our Team" />
+
+  <div class="container team">
+    <section aria-labelledby="faculty-heading" class="team-section">
+      <h2 id="faculty-heading" class="section-heading">{facultyText.heading}</h2>
+      <PeopleGrid people={faculty} showArea={false} size="lg" columns={3} />
+    </section>
+
+    <section aria-labelledby="exec-heading" class="team-section">
+      <h2 id="exec-heading" class="section-heading">Executive Board</h2>
+      <PeopleGrid people={exec} size="lg" columns={3} />
+    </section>
+
+    <section aria-labelledby="cohort-heading" class="team-section">
+      <h2 id="cohort-heading" class="section-heading">Research Cohort</h2>
+      {/*
+        No members yet: placeholder slots only. Members but no areas assigned yet: one
+        alphabetical group. Once areas are assigned: grouped by policy area.
+      */}
+      {
+        cohort.length === 0 ? (
+          <PeopleGrid people={[]} size="ml" columns={4} placeholders={COHORT_PLACEHOLDER_COUNT} />
+        ) : !groupByArea ? (
+          <PeopleGrid people={cohort} showArea={false} showTitle={false} size="ml" columns={4} />
+        ) : (
+          cohortByArea
+            .filter(({ members }) => members.length > 0)
+            .map(({ area, members }) => (
+              <div class="area-group">
+                <h3 class="section-heading">{area.name}</h3>
+                <PeopleGrid people={members} showArea={false} showTitle={false} size="ml" columns={4} />
+              </div>
+            ))
+        )
+      }
+      {
+        groupByArea && cohortUnassigned.length > 0 && (
+          <div class="area-group">
+            <h3 class="section-heading">Other</h3>
+            <PeopleGrid people={cohortUnassigned} showArea={false} showTitle={false} size="ml" columns={4} />
+          </div>
+        )
+      }
+    </section>
+
+  </div>
+</BaseLayout>
+
+<style>
+  .team {
+    padding-bottom: var(--space-7);
+  }
+  .team-section + .team-section {
+    margin-top: var(--space-8);
+    padding-top: var(--space-8);
+    border-top: var(--hairline) solid var(--color-hairline);
+  }
+  .area-group + .area-group {
+    margin-top: var(--space-7);
+  }
+  /* Policy-area names inside the cohort: serif subheads under the section label. */
+  .area-group h3 {
+    font-family: var(--font-serif);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-normal);
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--color-heading);
+  }
+</style>

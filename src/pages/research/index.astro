@@ -1,0 +1,214 @@
+---
+/**
+ * Research: "Recent work" (the newest RECENT_WORK_COUNT items) above a filterable
+ * "Publications" list of everything.
+ *
+ * Each item appears once: items shown in Recent work start hidden in the list below.
+ * When a filter is active, Recent work hides and the list shows every match.
+ * The page is fully rendered at build time; src/scripts/research-filters.ts adds
+ * filtering and keeps it in the URL (?type=…&area=…&quarter=…) for sharing.
+ *
+ * "Work in progress" (status in-progress: papers still being revised) is its own section
+ * with its own filters (URL keys prefixed "wip-"), laid out exactly like Publications so
+ * the page keeps its shape as papers move from in progress to published.
+ * Order: Recent work, then Work in progress, then Publications at the bottom (user request).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import PublicationCard from '../../components/PublicationCard.astro';
+import ComingSoon from '../../components/ComingSoon.astro';
+import FilterPanel from '../../components/FilterPanel.astro';
+import { RECENT_WORK_COUNT } from '../../config/site';
+import { POLICY_AREAS, PUBLICATION_TYPES, QUARTERS } from '../../config/taxonomy';
+import { getPublications, getWorkInProgress } from '../../lib/content';
+
+const pubs = await getPublications();
+const wip = await getWorkInProgress();
+const recent = pubs.slice(0, RECENT_WORK_COUNT);
+const recentIds = new Set(recent.map((p) => p.id));
+const [lead, ...rest] = recent;
+
+/** Filterable list sections (finished work only). */
+const sections = [{ id: 'publications', title: 'Publications', items: pubs }];
+
+const typeFilter = {
+  key: 'type' as const,
+  label: 'Type',
+  options: PUBLICATION_TYPES.map((t) => ({ value: t.id, label: t.label })),
+};
+const areaFilter = {
+  key: 'area' as const,
+  label: 'Policy area',
+  options: POLICY_AREAS.map((a) => ({ value: a.id, label: a.label })),
+};
+
+// Only offer quarters that actually have items in that list, newest first.
+const usedQuarters = QUARTERS.filter((q) => pubs.some((p) => p.data.quarter === q.id)).reverse();
+const wipQuarters = QUARTERS.filter((q) => wip.some((p) => p.data.quarter === q.id)).reverse();
+
+const filters = [
+  typeFilter,
+  areaFilter,
+  { key: 'quarter' as const, label: 'Quarter', options: usedQuarters.map((q) => ({ value: q.id, label: q.label })) },
+];
+const wipFilters = [
+  typeFilter,
+  areaFilter,
+  { key: 'quarter' as const, label: 'Quarter', options: wipQuarters.map((q) => ({ value: q.id, label: q.label })) },
+];
+---
+
+<BaseLayout
+  title="Research"
+  description="Research papers and policy memos from the Washington Policy Initiative."
+>
+  <PageHeader title="Research" />
+
+  <div class="container research">
+    {
+      pubs.length === 0 && wip.length === 0 && (
+        <ComingSoon title="Our first publications are coming soon.">
+          <p>
+            Our research teams are working on papers and memos across Economic, Education, Environmental, and
+            Civic Policy. Check back soon.
+          </p>
+        </ComingSoon>
+      )
+    }
+
+    {
+      pubs.length > 0 && (
+        <section class="recent" data-recent-section aria-labelledby="recent-heading">
+          <h2 id="recent-heading" class="section-title section-heading">Recent work</h2>
+          <div class="recent-grid">
+            {lead && <PublicationCard pub={lead} variant="lead" />}
+            {rest.map((pub) => (
+              <PublicationCard pub={pub} variant="card" />
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      wip.length > 0 && (
+        <section
+          id="work-in-progress"
+          class:list={['list-section', 'wip-section', { 'wip-section--first': pubs.length === 0 }]}
+          aria-labelledby="wip-heading"
+          data-filter-group
+          data-param-prefix="wip-"
+          data-noun="paper"
+        >
+          <div class="list-head">
+            <h2 id="wip-heading" class="section-title">Work in progress</h2>
+            <FilterPanel filters={wipFilters} />
+          </div>
+          <p class="filter-status muted" data-filter-status aria-live="polite"></p>
+          <div class="pub-list">
+            {wip.map((pub) => (
+              <PublicationCard pub={pub} filterable />
+            ))}
+          </div>
+          <p class="notice" data-filter-empty hidden>
+            No work in progress matches these filters.
+          </p>
+        </section>
+      )
+    }
+
+    {/* Publications: the full, filterable list of finished work, at the bottom (user request). */}
+    {
+      pubs.length > 0 &&
+      sections.map((section) => (
+        <section
+          class="list-section"
+          aria-labelledby={`${section.id}-heading`}
+          data-filter-group
+          data-param-prefix=""
+          data-noun="publication"
+          data-has-recent
+        >
+          <div class="list-head">
+            <h2 id={`${section.id}-heading`} class="section-title">
+              {section.title}
+            </h2>
+            <FilterPanel filters={filters} />
+          </div>
+          <p class="filter-status muted" data-filter-status aria-live="polite"></p>
+
+          <div class="pub-list">
+            {section.items.map((pub) => (
+              <PublicationCard pub={pub} filterable recentCopy={recentIds.has(pub.id)} />
+            ))}
+          </div>
+          <p class="notice" data-filter-empty hidden>
+            No publications match these filters.
+          </p>
+          <p class="muted list-hint" data-filter-hint hidden>
+            All of our publications are shown under Recent work. Use the filters to browse by type, policy area,
+            or quarter.
+          </p>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<script>
+  import '../../scripts/research-filters.ts';
+</script>
+
+<style>
+  .research {
+    padding-bottom: var(--space-7);
+  }
+  /* Section names are quiet sans labels; the serif titles below carry the page. */
+  .section-title {
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-5);
+  }
+  .recent-grid {
+    display: grid;
+    gap: var(--space-7) var(--space-6);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  }
+  .recent-grid > :global(.pub--lead) {
+    grid-column: 1 / -1;
+  }
+  .list-section {
+    margin-top: var(--space-9);
+  }
+  /* While there's no finished work, Work in progress opens the page. */
+  .wip-section--first {
+    margin-top: 0;
+  }
+  .list-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    border-bottom: var(--hairline) solid var(--color-rule);
+    padding-bottom: var(--space-3);
+  }
+  .list-head .section-title {
+    margin-bottom: 0;
+  }
+  .filter-status {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    margin: var(--space-3) 0 0;
+    min-height: 1.5em;
+  }
+  .list-hint {
+    font-style: italic;
+    margin-top: var(--space-5);
+  }
+</style>

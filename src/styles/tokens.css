@@ -1,0 +1,220 @@
+/* Self-hosted fonts (bundled into /_astro/ at build time; see Typography below). */
+@import '@fontsource-variable/newsreader/opsz.css';
+@import '@fontsource-variable/newsreader/opsz-italic.css';
+@import '@fontsource-variable/public-sans/wght.css';
+
+/*
+ * DESIGN TOKENS: the one place to change the site's look.
+ * Every color, font, size, and spacing value used anywhere on the site is defined here.
+ * Components reference these with var(--…); they never hard-code values.
+ *
+ * Direction: editorial, like a policy journal. Typography and whitespace do the work;
+ * color is used sparingly.
+ */
+
+:root {
+  color-scheme: light;
+
+  /*
+   * Palette: derived from the logo's lavender pink (#E2D5E7) and deep plum (#33253C).
+   * These are the ONLY hex values on the site; components use the role tokens below.
+   * (public/favicon.svg can't read CSS variables and keeps its own colors.)
+   * Contrast ratios are against the page background, #FCFAFD.
+   */
+  --paper: #fcfafd; /* near-white with a faint lavender tint */
+  --lavender-100: #f4e9f7; /* tag and label backgrounds */
+  --lavender-200: #e2d5e7; /* logo pink. 1.36:1, so small accents only, never meaning */
+  --lavender-400: #b9a4c2; /* hairlines. 2.2:1, so decorative dividers only */
+  --plum-500: #604f68; /* 7.2:1 */
+  --plum-600: #574760; /* 8.2:1 */
+  --plum-900: #33253c; /* logo plum. 13.8:1 */
+
+  /* Color roles */
+  --color-bg: var(--paper);
+  --color-text: var(--plum-900);
+  --color-text-muted: var(--plum-500); /* dates, captions, metadata, nav links */
+  --color-heading: var(--plum-900);
+  --color-link: var(--plum-900);
+  --color-link-underline: var(--lavender-200); /* resting underline on links in running text */
+  --color-link-hover-mark: var(--lavender-200); /* hover underline / highlight behind link text (10.1:1 under plum) */
+  --color-highlight: var(--lavender-200); /* text selection */
+  --color-rule: var(--plum-900); /* header rule, strong section rules */
+  --color-hairline: var(--lavender-400); /* dividers between list items and sections */
+  /*
+   * Policy area tag colours: the one deliberate exception to the pink/plum palette
+   * (user request). Soft tint + darker text of the same hue; text contrast on its tint:
+   * economic 6.2:1, education 6.2:1, environmental 6.4:1, civic 7.1:1.
+   */
+  --color-area-economic-bg: #f6ebc2; /* yellow */
+  --color-area-economic-text: #6a5310;
+  --color-area-education-bg: #efe1d2; /* brown */
+  --color-area-education-text: #6b4a2c;
+  --color-area-environmental-bg: #ddebda; /* green */
+  --color-area-environmental-text: #2f5b36;
+  --color-area-civic-bg: #dce6f3; /* blue */
+  --color-area-civic-text: #2a4b72;
+  --color-tag-bg: var(--lavender-100);
+  /* Light lavender box under a hovered or focused card (Home policy areas). Text on it: plum 12.1:1, secondary 6.3:1. */
+  --color-card-hover: var(--lavender-100);
+  --color-card-hover-strong: var(--lavender-200); /* the same box, hovered (Home "Join WPI") */
+  /*
+   * Link underline inside a hovered paper's lavender box: the muted plum (6.3:1 on the box),
+   * since the pink would vanish into it. User request; white and #B9A4C2 were tried first.
+   * The one exception to "no plum underlines": only here, only while the box shows.
+   */
+  --color-link-underline-on-card: var(--plum-500);
+  --color-tag-text: var(--plum-500); /* 6.3:1 on the tag background */
+  --color-button-bg: var(--plum-900);
+  --color-button-bg-hover: var(--plum-600);
+  --color-button-text: var(--paper); /* 13.8:1, 8.2:1 on hover */
+  --color-control-border: var(--plum-500); /* form controls need 3:1; hairline color would fail */
+  --color-focus: var(--plum-900); /* 13.8:1 */
+  /* The small photo-credit chip needs a little more tint: its text is tiny and sits over dark ridges. */
+  --color-scrim-strong: color-mix(in srgb, var(--paper) 66%, transparent);
+  /* Small soft shadow under text on the Home photo (set to `none` to remove). */
+  --hero-text-shadow: 0 1px 3px color-mix(in srgb, var(--plum-900) 35%, transparent);
+  /* Very soft shadow under the two Home buttons (user request; the only box shadows on the site). */
+  /* Very soft drop shadow under every lavender hover box: Home policy-area cards and paper entries (user request). */
+  --card-shadow:
+    0 1px 2px color-mix(in srgb, var(--plum-900) 6%, transparent),
+    0 4px 12px color-mix(in srgb, var(--plum-900) 6%, transparent);
+  --hero-button-shadow:
+    0 1px 2px color-mix(in srgb, var(--plum-900) 12%, transparent),
+    0 3px 8px color-mix(in srgb, var(--plum-900) 8%, transparent);
+  /*
+   * Washington Library Gap Map. Staffing categories differ by texture as well as tone
+   * (solid / dots / hatching), so they don't rely on color alone. Every mark meets 3:1
+   * against what's next to it: plum-900 on paper 13.8:1; plum-600 dots on lavender-100
+   * 7.2:1; plum-500 hatching on paper 7.2:1; plum-500 district borders on paper 7.2:1.
+   */
+  --color-map-full: var(--plum-900);
+  --color-map-part-bg: var(--lavender-100);
+  --color-map-part-dot: var(--plum-600);
+  --color-map-none-bg: var(--paper);
+  --color-map-none-hatch: var(--plum-500);
+  --color-map-border: var(--plum-500);
+  --color-map-selected: var(--lavender-200); /* outline halo around the selected district */
+  --color-chart-bar: var(--plum-600);
+  --color-chart-district: var(--plum-900);
+  --color-chart-group: var(--plum-600);
+  --color-chart-state: var(--plum-500);
+  --color-chart-grid: var(--lavender-400); /* decorative gridlines only */
+  --color-draft-bg: var(--plum-900); /* dev-only badge, inverted so it stands out */
+  --color-draft-text: var(--paper);
+
+  /*
+   * Typography. Self-hosted from npm (@fontsource-variable/*), served from our own
+   * origin, so the CSP stays font-src 'self'. Both are SIL Open Font License 1.1.
+   *  - Newsreader (Production Type): a serif designed for on-screen news and long-form
+   *    reading, with an optical-size axis. Large headings get its finer display cut,
+   *    body text its sturdier text cut, automatically.
+   *  - Public Sans (U.S. Web Design System): a plain public-sector sans for the
+   *    small "apparatus": nav, metadata, labels, buttons.
+   */
+  --font-serif: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Public Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-heading: var(--font-serif);
+  --font-body: var(--font-serif);
+  --font-ui: var(--font-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --text-2xs: 0.75rem; /* 12px: uppercase labels */
+  --text-xs: 0.8125rem; /* 13px */
+  --text-sm: 0.9375rem; /* 15px */
+  --text-base: 1.125rem; /* 18px body */
+  --text-lg: 1.3125rem; /* 21px */
+  --text-xl: 1.625rem; /* 26px */
+  --text-2xl: clamp(1.875rem, 4vw, 2.375rem);
+  --text-3xl: clamp(2.375rem, 6.5vw, 3.75rem);
+  --text-display: clamp(2.75rem, 8vw, 5rem); /* home page title */
+  --text-title: clamp(2rem, 4.5vw, 2.875rem); /* publication titles, which run long */
+  --text-statement: clamp(1.3125rem, 3vw, 1.625rem); /* mission, lead abstract */
+  --text-mission: clamp(1.4375rem, 3.3vw, 1.8125rem); /* Home mission: a step above --text-statement (23–29px; user request) */
+
+  --leading-tight: 1.15;
+  --leading-heading: 1.22;
+  --leading-normal: 1.65;
+  --leading-ui: 1.45;
+  --tracking-label: 0.09em;
+  --tracking-display: -0.015em;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-9: 6.5rem;
+
+  /* Layout */
+  --content-width: 72rem;
+  --wide-width: 52rem; /* tables of contents, profiles, publication pages */
+  --area-cards-width: 92rem; /* Home policy-area row: wider than the page so the outer cards sit near the edges */
+  --prose-width: 66ch; /* about 70 characters per line of body text */
+  --gutter: 1.25rem;
+
+  /* Lines and shape */
+  --hairline: 1px;
+  --border-width: 1px;
+  --underline-rest: 0.09em; /* pink link underline */
+  --underline-hover: 0.14em; /* pink mark on hover */
+  --underline-current: 0.3em; /* thicker pink mark: current page in the main menu only */
+  --focus-width: 2px;
+  --focus-offset: 3px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-full: 999px;
+
+  /* Home page photo */
+  --scrim-blur: 1.5px; /* behind the photo-credit chip */
+  --hero-page-fade: 8rem; /* the photo's dissolve into the page, just below the fold */
+  --fog-rise: 12rem; /* how far above the tagline the bottom fog starts */
+  --fog-blur: 16px; /* the fog's blur, ramping in with its whiteness */
+  --hero-below-inset: var(--space-8); /* gap between the buttons and the bottom of the screen */
+  --hero-header-clearance: 10.5rem; /* room for the header when it wraps (phones/tablets) */
+  /* Sticky header: in-page links (#…) scroll to this far below the top so the header doesn't cover them. */
+  --header-offset: 10rem; /* phones: header is about 148px (two rows) */
+
+  /* Logo mark in the header */
+  --header-inset: var(--space-5); /* distance of the logo from the page's left edge */
+  --logo-height: 1.75rem; /* plain W */
+  --logo-tile-size: 3rem; /* W on the pink tile */
+  --footer-logo-size: 2rem; /* the same tile, bottom left of the footer */
+
+  /* Loading screen (first page of a session only) */
+  --loader-hold: 2.1s; /* the W's full turn · shrink · grow · turn-back */
+  --loader-fade: 0.35s; /* then the screen fades away */
+  --loader-logo-size: 6rem;
+
+  /* Photos */
+  --avatar-size: 7rem;
+  --avatar-size-ml: 9rem;
+  --avatar-size-lg: 11rem;
+
+  --transition-fast: 0.15s ease;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --header-offset: 8.5rem; /* tablets: about 117–125px */
+  }
+}
+@media (min-width: 48rem) {
+  :root {
+    --gutter: var(--space-6);
+  }
+}
+/* Wide screens: the header is a single row (81px), so the panel needs less room above it. */
+@media (min-width: 64rem) {
+  :root {
+    --hero-header-clearance: 7rem;
+    --header-offset: 6rem;
+  }
+}

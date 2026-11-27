@@ -1,0 +1,43 @@
+---
+/** Neutral silhouette shown when a member has no photo. Decorative only. */
+import type { AvatarSize } from '../lib/avatar';
+
+interface Props {
+  size?: AvatarSize;
+}
+const { size = 'md' } = Astro.props;
+---
+
+<div class:list={['avatar', 'avatar--placeholder', `avatar--${size}`]} aria-hidden="true">
+  <svg viewBox="0 0 64 64" focusable="false">
+    <circle cx="32" cy="24" r="12" fill="currentColor"></circle>
+    <path d="M10 58c0-12 10-20 22-20s22 8 22 20z" fill="currentColor"></path>
+  </svg>
+</div>
+
+<style>
+  .avatar--placeholder {
+    background: var(--color-tag-bg);
+    color: var(--color-hairline); /* decorative silhouette (aria-hidden) */
+    border-radius: var(--radius-full);
+    display: grid;
+    place-items: end center;
+    overflow: hidden;
+  }
+  .avatar--md {
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+  }
+  .avatar--ml {
+    width: var(--avatar-size-ml);
+    height: var(--avatar-size-ml);
+  }
+  .avatar--lg {
+    width: var(--avatar-size-lg);
+    height: var(--avatar-size-lg);
+  }
+  svg {
+    width: 80%;
+    height: 80%;
+  }
+</style>

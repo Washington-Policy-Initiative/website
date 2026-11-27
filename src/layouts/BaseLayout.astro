@@ -1,0 +1,60 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import SiteLoader from '../components/SiteLoader.astro';
+import { SITE_NAME } from '../config/site';
+
+interface Props {
+  /** Page title; the site name is appended automatically. Omit on the home page. */
+  title?: string;
+  description: string;
+  /** Prevent search engines from indexing (used for drafts in dev, 404). */
+  noindex?: boolean;
+}
+
+const { title, description, noindex = false } = Astro.props;
+const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+const ogImage = Astro.site ? new URL('/og-image.png', Astro.site).href : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/*
+      Loading-screen gate: must run before the page is drawn, so it's a blocking script.
+      is:inline only stops Astro from bundling it; it is an external file from public/
+      (CSP script-src 'self'), never inline code.
+    */}
+    <script is:inline src="/loader-gate.js"></script>
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    {/* Shared-link preview: the W on the pink tile (social sites need a full URL and a PNG, not SVG). */}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="1200" />}
+    {ogImage && <meta property="og:image:alt" content={`${SITE_NAME} logo: a serif W`} />}
+    <meta name="twitter:card" content="summary" />
+  </head>
+  <body>
+    <SiteLoader />
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

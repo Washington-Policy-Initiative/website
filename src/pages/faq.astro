@@ -1,0 +1,119 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import ComingSoon from '../components/ComingSoon.astro';
+import { FAQ_CATEGORIES } from '../config/taxonomy';
+
+const all = await getCollection('faq');
+const groups = await Promise.all(
+  FAQ_CATEGORIES.map(async (category) => {
+    const entries = all
+      .filter((e) => e.data.category === category.id)
+      .sort((a, b) => a.data.order - b.data.order);
+    const items = await Promise.all(
+      entries.map(async (entry) => ({ entry, Content: (await render(entry)).Content })),
+    );
+    return { category, items };
+  }),
+);
+const nonEmpty = groups.filter((g) => g.items.length > 0);
+---
+
+<BaseLayout
+  title="FAQ"
+  description="Frequently asked questions about the Washington Policy Initiative and how to join."
+>
+  <PageHeader title="Frequently Asked Questions" />
+  <div class="container faq">
+    {nonEmpty.length === 0 && <ComingSoon title="Questions and answers coming soon." />}
+    {
+      nonEmpty.map(({ category, items }) => (
+        <section class="faq-group" aria-labelledby={`faq-${category.id}`}>
+          <h2 id={`faq-${category.id}`}>{category.label}</h2>
+          {/* <details> gives collapsible answers with no JavaScript. */}
+          {items.map(({ entry, Content }) => (
+            <details class="faq-item">
+              <summary>{entry.data.question}</summary>
+              <div class="rich-text faq-answer">
+                <Content />
+              </div>
+            </details>
+          ))}
+        </section>
+      ))
+    }
+    <p class="faq__more muted text-center">
+      Didn't find your answer? <a href="/contact/">Contact us</a>.
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .faq {
+    padding-bottom: var(--space-7);
+    max-width: calc(var(--prose-width) + 2 * var(--gutter));
+    margin-inline: auto;
+  }
+  .faq-group + .faq-group {
+    margin-top: var(--space-8);
+  }
+  .faq-group h2 {
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    padding-bottom: var(--space-3);
+    margin-bottom: 0;
+    border-bottom: var(--hairline) solid var(--color-rule);
+  }
+  .faq-item {
+    border-bottom: var(--hairline) solid var(--color-hairline);
+  }
+  /* Question in serif, with a +/− marker in place of the browser's triangle. */
+  .faq-item summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-heading);
+    color: var(--color-heading);
+  }
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq-item summary::after {
+    content: '+';
+    font-family: var(--font-ui);
+    font-weight: var(--weight-normal);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .faq-item[open] summary::after {
+    content: '−';
+  }
+  .faq-item summary:hover {
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-link-hover-mark);
+    text-decoration-thickness: var(--underline-hover);
+    text-underline-offset: 0.06em;
+    text-decoration-skip-ink: none;
+  }
+  .faq-answer {
+    padding-bottom: var(--space-5);
+    color: var(--color-text);
+  }
+  .faq__more {
+    margin-top: var(--space-7);
+    font-style: italic;
+  }
+</style>

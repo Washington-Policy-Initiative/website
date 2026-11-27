@@ -1,0 +1,250 @@
+---
+/**
+ * One publication (finished or work in progress), in one of three layouts:
+ *  - "lead": the newest item at the top of Recent work (full width, with abstract)
+ *  - "card": the other Recent work items (compact, short abstract)
+ *  - "row":  list layout used in the filterable Publications list, area pages, and profiles
+ *
+ * No divider lines between entries; a light lavender box shows on hover/focus.
+ *
+ * The data-* attributes (filterable only) are what src/scripts/research-filters.ts reads;
+ * all visible content is rendered at build time.
+ */
+import PubMeta from './PubMeta.astro';
+import AreaTags from './AreaTags.astro';
+import AuthorList from './AuthorList.astro';
+import { QUARTERS, labelFor } from '../config/taxonomy';
+import { formatDate, getAuthors, isoDate, publicationHref, type Publication } from '../lib/content';
+
+interface Props {
+  pub: Publication;
+  variant?: 'lead' | 'card' | 'row';
+  /** Heading level for the title, to keep the page outline correct. */
+  headingLevel?: 'h2' | 'h3';
+  /** Adds the data attributes the /research filter script uses. */
+  filterable?: boolean;
+  /** Marks a list copy of an item already shown in Recent work (hidden until filtering). */
+  recentCopy?: boolean;
+  /** Show the type/quarter line (and badges) above the title. Off on the Home page. */
+  showMeta?: boolean;
+}
+
+const {
+  pub,
+  variant = 'row',
+  headingLevel = 'h3',
+  filterable = false,
+  recentCopy = false,
+  showMeta = true,
+} = Astro.props;
+const { data } = pub;
+const authors = await getAuthors(pub);
+const Heading = headingLevel;
+const href = publicationHref(pub);
+/*
+ * Work in progress has no page or PDF yet: its title isn't a link, its quarter stands in
+ * for the date, and its abstract always shows (there's nothing else to read).
+ */
+const wip = data.status === 'in-progress';
+const quarterLabel = labelFor(QUARTERS, data.quarter);
+/* Data Tools show their one-line description (the abstract) in lists too. */
+const showAbstract = variant !== 'row' || wip || data.type === 'data-tool';
+---
+
+<article
+  class:list={['pub', `pub--${variant}`, { 'pub--wip': wip }]}
+  data-pub={filterable ? pub.id : undefined}
+  data-type={filterable ? data.type : undefined}
+  data-quarter={filterable ? data.quarter : undefined}
+  data-areas={filterable ? data.areas.join(' ') : undefined}
+  data-recent-copy={recentCopy ? '' : undefined}
+  hidden={recentCopy}
+>
+  {
+    variant === 'row' &&
+      (wip ? (
+        <p class="pub__date">
+          {quarterLabel}
+        </p>
+      ) : (
+        <time class="pub__date" datetime={isoDate(data.date)}>
+          {formatDate(data.date)}
+        </time>
+      ))
+  }
+  <div class="pub__body">
+    {showMeta && <PubMeta pub={pub} />}
+    <Heading class="pub__title">{wip ? data.title : <a href={href}>{data.title}</a>}</Heading>
+    <p class="pub__byline">
+      <AuthorList authors={authors} />
+      {
+        variant !== 'row' &&
+          (wip ? (
+            <span class="pub__when">{quarterLabel}</span>
+          ) : (
+            <time class="pub__when" datetime={isoDate(data.date)}>{formatDate(data.date)}</time>
+          ))
+      }
+    </p>
+    {showAbstract && <p class="pub__abstract">{data.abstract}</p>}
+    <AreaTags pub={pub} />
+  </div>
+</article>
+
+<style>
+  /*
+   * Every entry: no divider lines (user preference: space separates papers). A light
+   * lavender box (the Home policy-area hover color) appears under the hovered or focused
+   * paper. The box reaches a little past the text on each side (padding + matching
+   * negative margin), so the text stays aligned with the headings above it.
+   */
+  .pub {
+    position: relative;
+    padding: var(--space-5) var(--space-4);
+    margin-inline: calc(-1 * var(--space-4));
+    border-radius: var(--radius-md);
+    transition:
+      background-color var(--transition-fast),
+      box-shadow var(--transition-fast);
+  }
+  .pub:hover,
+  .pub:has(a:focus-visible) {
+    background: var(--color-card-hover); /* plum text 12.1:1, secondary 6.3:1 on it */
+    box-shadow: var(--card-shadow); /* the same soft shadow as Home's policy-area cards */
+  }
+  /* The title's link stretches over the whole entry, so anywhere in the box opens the paper. */
+  .pub__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  /* Author links stay clickable on their own, above the stretched title link. */
+  .pub__byline :global(a) {
+    position: relative;
+    z-index: 1;
+  }
+  /* Keyboard focus outlines the whole box instead of just the title. */
+  .pub__title a:focus-visible {
+    outline: none;
+  }
+  .pub:has(.pub__title a:focus-visible) {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: calc(-1 * var(--focus-width));
+  }
+
+  /* Title in serif; everything else is quiet sans metadata. */
+  .pub__title {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-heading);
+    margin-bottom: var(--space-2);
+  }
+  .pub__title a {
+    color: var(--color-heading);
+    text-decoration: none;
+  }
+  /*
+   * Inside the hovered paper's lavender box, the title and author names underline in
+   * white instead of the usual pink (user request: the pink blends into the box).
+   */
+  .pub:hover .pub__title a:hover,
+  .pub:hover .pub__byline :global(a:hover) {
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-link-underline-on-card);
+    text-decoration-thickness: var(--underline-hover);
+    text-underline-offset: 0.06em;
+    text-decoration-skip-ink: none;
+  }
+  .pub__byline {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-3);
+  }
+  /* Cards: the date gets its own line under the authors. */
+  .pub__when {
+    display: block;
+  }
+  .pub__byline :global(a) {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+  .pub__byline :global(a:hover) {
+    color: var(--color-text);
+    text-decoration-line: underline;
+  }
+  .pub__abstract {
+    font-size: var(--text-base);
+    line-height: 1.6;
+    margin-bottom: var(--space-4);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
+
+  /* Card (Recent work): compact. */
+  .pub--card .pub__title {
+    font-size: var(--text-lg);
+  }
+  .pub--card .pub__abstract {
+    font-size: var(--text-sm);
+  }
+
+  /* Lead: the newest item, set larger, like the first article in an issue. */
+  .pub--lead {
+    padding-block: var(--space-6) var(--space-5);
+  }
+  .pub--lead .pub__title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-normal);
+    max-width: 30ch;
+    margin-bottom: var(--space-3);
+  }
+  .pub--lead .pub__abstract {
+    font-size: clamp(var(--text-base), 2vw, var(--text-lg));
+    line-height: 1.55;
+    max-width: var(--prose-width);
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+
+  /* Row: table-of-contents entry. Date column + content; space between rows, no lines. */
+  .pub--row {
+    display: grid;
+    gap: var(--space-1) var(--space-6);
+    padding-block: var(--space-5);
+  }
+  /* Work in progress in a list: the full abstract, at reading width. */
+  .pub--wip.pub--row .pub__abstract {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    line-clamp: none;
+    max-width: var(--prose-width);
+  }
+  .pub--row[hidden] {
+    display: none;
+  }
+  .pub__date {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    line-height: var(--leading-ui);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+    padding-top: 0.2em;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pub {
+      transition: none;
+    }
+  }
+  @media (min-width: 40rem) {
+    .pub--row {
+      grid-template-columns: 8.5rem 1fr;
+      padding-block: var(--space-6);
+    }
+  }
+</style>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+# The Sitemap line is added at build time from SITE_URL (integrations/sitemap.mjs).

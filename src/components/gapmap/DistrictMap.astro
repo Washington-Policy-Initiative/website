@@ -1,0 +1,277 @@
+---
+/**
+ * The district map, its legend, and the district search. The map itself is drawn by
+ * src/scripts/gapmap.ts; everything else here is plain HTML, so the legend, search
+ * label, and notes are readable without JavaScript.
+ *
+ * Staffing categories use texture as well as tone (solid / dots / hatching), defined
+ * once below as SVG patterns and shared by the map and the legend.
+ */
+import {
+  CATEGORY_COUNTS,
+  CATEGORY_LABELS,
+  LATEST,
+  UNMAPPED,
+  categoryOf,
+  districts,
+  type StaffingCategory,
+} from '../../lib/gapmap';
+
+const order: StaffingCategory[] = ['full', 'part', 'none'];
+/* How many in each category have no map shape, so the legend matches what's drawn. */
+const unmappedIn = (cat: StaffingCategory) =>
+  districts.filter((d) => !d.hasShape && categoryOf(d.fte[LATEST]) === cat).length;
+---
+
+<section class="gm-section gm-map-section" aria-labelledby="gm-map-heading">
+  {/* Shared patterns. Colors come from tokens.css via the classes below. */}
+  <svg class="gm-defs" aria-hidden="true" focusable="false" width="0" height="0">
+    <defs>
+      <pattern id="gm-pattern-part" patternUnits="userSpaceOnUse" width="6" height="6">
+        <rect class="gm-pattern-part-bg" width="6" height="6"></rect>
+        <circle class="gm-pattern-part-dot" cx="3" cy="3" r="1.25"></circle>
+      </pattern>
+      <pattern id="gm-pattern-none" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+        <rect class="gm-pattern-none-bg" width="5" height="5"></rect>
+        <line class="gm-pattern-none-line" x1="0" y1="0" x2="0" y2="5"></line>
+      </pattern>
+    </defs>
+  </svg>
+
+  <div class="gm-section__head">
+    <h2 id="gm-map-heading" class="gm-section__title">Map: librarian staffing, 2024–25</h2>
+  </div>
+
+  <ul class="gm-legend" aria-label="Map legend">
+    {
+      order.map((cat) => (
+        <li>
+          <svg class="gm-legend__swatch" viewBox="0 0 24 16" aria-hidden="true" focusable="false">
+            <rect class:list={['gm-district', `gm-cat-${cat}`]} x="0.5" y="0.5" width="23" height="15" />
+          </svg>
+          <span>
+            {CATEGORY_LABELS[cat]}{' '}
+            <span class="gm-legend__count">
+              ({CATEGORY_COUNTS[cat]} districts{unmappedIn(cat) > 0 && `, ${unmappedIn(cat)} not on the map`})
+            </span>
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="gm-search" data-gm-search>
+    <label class="gm-search__label" for="gm-search-input">Find a district</label>
+    <input
+      id="gm-search-input"
+      class="gm-search__input"
+      type="search"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-expanded="false"
+      aria-controls="gm-search-results"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Type a district name"
+      disabled
+    />
+    <ul id="gm-search-results" class="gm-search__results" role="listbox" aria-label="Matching districts" hidden></ul>
+  </div>
+
+  <div class="gm-map" data-gm-map>
+    <p class="gm-map__fallback" data-gm-map-fallback>
+      The map needs JavaScript. Every district is also listed in the <a href="#gm-table-heading">table of all districts</a>.
+    </p>
+    <div class="gm-map__tooltip" data-gm-tooltip hidden></div>
+  </div>
+  <p class="gm-map__hint" id="gm-map-hint">
+    Click a district to open its report. With a keyboard, move to the map and use the arrow keys to go from district to
+    district in alphabetical order, then press Enter. The search box above and the table below list every district too.
+  </p>
+  <p class="gm-visually-live visually-hidden" aria-live="polite" data-gm-map-live></p>
+  <p class="gm-map__note">
+    {UNMAPPED.length} entities have no map shape but are included in the search and the table: {UNMAPPED.join(', ')}.
+  </p>
+</section>
+
+<style>
+  .gm-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+  /* Pattern and district fills (also used by the map the script draws, hence :global). */
+  :global(.gm-pattern-part-bg) {
+    fill: var(--color-map-part-bg);
+  }
+  :global(.gm-pattern-part-dot) {
+    fill: var(--color-map-part-dot);
+  }
+  :global(.gm-pattern-none-bg) {
+    fill: var(--color-map-none-bg);
+  }
+  :global(.gm-pattern-none-line) {
+    stroke: var(--color-map-none-hatch);
+    stroke-width: 1.3;
+  }
+  :global(.gm-district) {
+    stroke: var(--color-map-border);
+    stroke-width: 0.6;
+    vector-effect: non-scaling-stroke;
+  }
+  :global(.gm-cat-full) {
+    fill: var(--color-map-full);
+  }
+  :global(.gm-cat-part) {
+    fill: url(#gm-pattern-part);
+  }
+  :global(.gm-cat-none) {
+    fill: url(#gm-pattern-none);
+  }
+
+  .gm-legend {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-5);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+  }
+  .gm-legend li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .gm-legend__swatch {
+    width: 1.75rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+  }
+  .gm-legend__count {
+    color: var(--color-text-muted);
+  }
+
+  /* Search (combobox) */
+  .gm-search {
+    position: relative;
+    max-width: 28rem;
+    margin-bottom: var(--space-5);
+    font-family: var(--font-ui);
+  }
+  .gm-search__label {
+    display: block;
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-1);
+  }
+  .gm-search__input {
+    width: 100%;
+    font: inherit;
+    font-size: var(--text-base);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-control-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  .gm-search__results {
+    position: absolute;
+    z-index: 2;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: var(--space-1) 0 0;
+    padding: var(--space-1) 0;
+    list-style: none;
+    background: var(--color-bg);
+    border: var(--hairline) solid var(--color-rule);
+    max-height: 18rem;
+    overflow-y: auto;
+  }
+  :global(.gm-search__option) {
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+  }
+  :global(.gm-search__option small) {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+  :global(.gm-search__option[aria-selected='true']),
+  :global(.gm-search__option:hover) {
+    background: var(--color-tag-bg);
+  }
+  :global(.gm-search__empty) {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  /* The map */
+  .gm-map {
+    position: relative;
+  }
+  .gm-map__fallback {
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+  :global(.gm-map__svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  :global(.gm-map__svg:focus-visible) {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: var(--focus-offset);
+  }
+  :global(.gm-map__svg .gm-district) {
+    cursor: pointer;
+  }
+  /* Hovered, keyboard-active, or selected district: a thick plum outline with a light halo. */
+  :global(.gm-map__svg .gm-district.is-active),
+  :global(.gm-map__svg .gm-district:hover) {
+    stroke: var(--color-map-full);
+    stroke-width: 2.5;
+    paint-order: stroke;
+  }
+  :global(.gm-map__svg .gm-district.is-selected) {
+    stroke: var(--color-map-full);
+    stroke-width: 3.5;
+  }
+  .gm-map__tooltip {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    max-width: 17rem;
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-bg);
+    border: var(--hairline) solid var(--color-rule);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    line-height: var(--leading-ui);
+  }
+  :global(.gm-map__tooltip strong) {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: var(--text-base);
+    font-weight: var(--weight-medium);
+  }
+  .gm-map__hint,
+  .gm-map__note {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    max-width: var(--prose-width);
+    margin: var(--space-3) 0 0;
+  }
+</style>

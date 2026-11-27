@@ -1,0 +1,98 @@
+---
+/**
+ * Loading screen (user request): shown once per browser session, on the first page a
+ * visitor opens. public/loader-gate.js adds `show-loader` to <html> before the page is
+ * drawn; everything else here is CSS, so the screen plays its animation once (about
+ * 2.4s) and fades away by itself, even without the rotation script below.
+ *
+ * The W turns one way, pauses and shrinks, grows back, then turns the other way.
+ * Below it, a loading message changes once. Decorative only (aria-hidden): the page
+ * underneath is already fully there for screen readers. Skipped entirely for visitors
+ * who ask for reduced motion.
+ */
+import logoTile from '../assets/brand/logo-w-tile.svg';
+---
+
+<div class="site-loader" aria-hidden="true">
+  <img class="site-loader__mark" src={logoTile.src} width="96" height="96" alt="" />
+  <p class="site-loader__message" data-loader-message>Evidence-based policy research loading…</p>
+</div>
+
+<script>
+  import '../scripts/site-loader.ts';
+</script>
+
+<style>
+  .site-loader {
+    display: none;
+  }
+  :global(html.show-loader) .site-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 100; /* above the sticky header and everything else */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-5);
+    background: var(--color-bg);
+    animation: loader-out var(--loader-fade) ease var(--loader-hold) forwards;
+  }
+  .site-loader__mark {
+    width: var(--loader-logo-size);
+    height: var(--loader-logo-size);
+    animation: loader-mark var(--loader-hold) ease-in-out both;
+  }
+  .site-loader__message {
+    margin: 0;
+    min-height: 1.5em;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+    text-align: center;
+    padding-inline: var(--gutter);
+    transition: opacity 0.25s ease;
+  }
+  .site-loader__message.is-swapping {
+    opacity: 0;
+  }
+
+  /* Turn one way · pause and shrink · grow back · turn the other way. */
+  @keyframes loader-mark {
+    0% {
+      transform: rotate(0deg) scale(1);
+    }
+    25% {
+      transform: rotate(360deg) scale(1);
+    }
+    32% {
+      transform: rotate(360deg) scale(1); /* pause */
+    }
+    46% {
+      transform: rotate(360deg) scale(0.78); /* smaller */
+    }
+    58% {
+      transform: rotate(360deg) scale(1.08); /* larger */
+    }
+    66% {
+      transform: rotate(360deg) scale(1); /* back to normal */
+    }
+    92%,
+    100% {
+      transform: rotate(0deg) scale(1); /* the other way round */
+    }
+  }
+  @keyframes loader-out {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html.show-loader) .site-loader {
+      display: none;
+    }
+  }
+</style>

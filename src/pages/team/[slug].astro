@@ -1,0 +1,203 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Avatar from '../../components/Avatar.astro';
+import PublicationCard from '../../components/PublicationCard.astro';
+import { SITE_NAME } from '../../config/site';
+import {
+  areaById,
+  getCurrentPeople,
+  getPublicationsBy,
+  getWorkInProgressBy,
+  roleLabel,
+  type Person,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  // Alumni get no profile page.
+  const people = await getCurrentPeople();
+  return people.map((person) => ({ params: { slug: person.id }, props: { person } }));
+}
+
+interface Props {
+  person: Person;
+}
+const { person } = Astro.props;
+const { data } = person;
+const { Content } = await render(person);
+const hasBio = Boolean(person.body?.trim());
+const area = data.area ? areaById(data.area) : undefined;
+/*
+ * Faculty profiles show an "About" section (their bio) instead of Publications and
+ * Work in progress; student profiles keep their bio and publication sections.
+ */
+const isFaculty = data.role === 'faculty';
+const pubs = await getPublicationsBy(person.id);
+const wip = await getWorkInProgressBy(person.id);
+
+/* Pronouns, on their own line under the title. */
+const personal = data.pronouns;
+
+/* Optional profile links, in a fixed order; unset or empty ones are skipped. */
+const links = [
+  { label: 'Google Scholar', href: data.links?.googleScholar },
+  { label: 'Faculty page', href: data.links?.facultyPage },
+  { label: 'Personal website', href: data.links?.website },
+].filter((link): link is { label: string; href: string } => Boolean(link.href));
+---
+
+<BaseLayout title={data.name} description={`${data.name}, ${data.title} at the ${SITE_NAME}.`}>
+  <article class="container profile">
+    <p class="eyebrow"><a href="/team/">Team</a> / {roleLabel(data.role)}</p>
+    <div class="profile__head">
+      <Avatar person={person} size="lg" />
+      <div>
+        <h1>{data.name}</h1>
+        <p class="profile__title">{data.title}</p>
+        {personal && <p class="muted profile__personal">{personal}</p>}
+        {area && <p class="muted"><a href={`/areas/${area.id}/`}>{area.name}</a></p>}
+        {
+          links.length > 0 && (
+            <ul class="profile__links" aria-label={`Links for ${data.name}`}>
+              {links.map((link) => (
+                <li>
+                  <a href={link.href} target="_blank" rel="noopener noreferrer">
+                    {link.label}
+                    <span class="visually-hidden"> (opens in new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+    </div>
+
+    {
+      isFaculty && (
+        <section class="profile__work" aria-labelledby="about-heading">
+          <h2 id="about-heading">About</h2>
+          {hasBio ? (
+            <div class="rich-text profile__about">
+              <Content />
+            </div>
+          ) : (
+            <p class="muted">About text coming soon.</p>
+          )}
+        </section>
+      )
+    }
+
+    {
+      !isFaculty && hasBio && (
+        <section class="rich-text prose profile__bio" aria-label="Biography">
+          <Content />
+        </section>
+      )
+    }
+
+    {
+      !isFaculty && (pubs.length > 0 || wip.length === 0) && (
+        <section class="profile__work" aria-labelledby="pubs-heading">
+          <h2 id="pubs-heading">Publications</h2>
+          {pubs.length > 0 ? (
+            <div class="pub-list">
+              {pubs.map((pub) => (
+                <PublicationCard pub={pub} />
+              ))}
+            </div>
+          ) : (
+            <p class="muted">No publications yet.</p>
+          )}
+        </section>
+      )
+    }
+    {
+      !isFaculty && wip.length > 0 && (
+        <section class="profile__work" aria-labelledby="wip-heading">
+          <h2 id="wip-heading">Work in progress</h2>
+          <div class="pub-list">
+            {wip.map((pub) => (
+              <PublicationCard pub={pub} />
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </article>
+</BaseLayout>
+
+<style>
+  .profile {
+    padding-block: var(--space-8) var(--space-7);
+    max-width: calc(var(--wide-width) + 2 * var(--gutter));
+  }
+  .profile__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-5) var(--space-6);
+    margin-bottom: var(--space-7);
+  }
+  /* The text column can shrink, so a long position title stays beside the photo. */
+  .profile__head > div {
+    flex: 1 1 18rem;
+    min-width: 0;
+  }
+  .profile__head h1 {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-3);
+  }
+  .profile__title {
+    font-family: var(--font-ui);
+    font-size: var(--text-base);
+    line-height: var(--leading-ui);
+    margin-bottom: var(--space-1);
+  }
+  .profile__head .muted {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+  /* Profile links: a quiet sans row under the title; wraps cleanly on narrow screens. */
+  .profile__links {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-4) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+  }
+  /* Full-width rule (like the Publications list), with the text kept at reading width. */
+  .profile__about {
+    padding-top: var(--space-4);
+    border-top: var(--hairline) solid var(--color-rule);
+  }
+  .profile__about > :global(*) {
+    max-width: var(--prose-width);
+  }
+  .profile__bio {
+    margin-inline: 0;
+  }
+  .profile__work {
+    margin-top: var(--space-8);
+  }
+  .profile__work h2 {
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    line-height: var(--leading-ui);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-3);
+  }
+  .profile__work > p {
+    font-style: italic;
+    padding-top: var(--space-4);
+    border-top: var(--hairline) solid var(--color-rule);
+  }
+</style>
