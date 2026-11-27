@@ -16,7 +16,7 @@
   "dependencies": {
     "@fontsource-variable/newsreader": "5.3.0",
     "@fontsource-variable/public-sans": "5.3.0",
-    "astro": "7.4.7",
+    "astro": "7.4.12",
     "d3-array": "3.2.4",
     "d3-axis": "3.0.0",
     "d3-geo": "3.1.1",
