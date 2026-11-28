@@ -95,10 +95,20 @@ a:hover {
   text-decoration-skip-ink: none;
 }
 
+/*
+ * Focus indicators: a plum ring (13.8:1 on the page, well above WCAG's 3:1) for keyboard
+ * focus only. Mouse clicks and taps get no ring: some browsers paint their own blue ring
+ * on clicked elements that can take focus (e.g. the Gap Map's SVG), even though
+ * :focus-visible doesn't match. Browsers without :focus-visible ignore the second rule
+ * entirely, so they keep their default ring and nobody loses a focus indicator.
+ */
 :focus-visible {
   outline: var(--focus-width) solid var(--color-focus);
   outline-offset: var(--focus-offset);
   border-radius: var(--radius-sm);
+}
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 img {

@@ -228,6 +228,20 @@ const isMenu = (item: NavItem): item is NavMenu => 'children' in item;
     display: block;
   }
 
+  /*
+   * Tablets (768–1023px): slightly tighter gaps and side padding, so the wordmark and nav
+   * still fit on one row at the 95% site scale. Wider screens keep the roomier spacing.
+   */
+  @media (min-width: 48rem) and (max-width: 63.99rem) {
+    .site-header__inner {
+      column-gap: var(--space-5);
+      padding-inline: var(--space-4);
+    }
+    .site-nav {
+      column-gap: var(--space-4);
+    }
+  }
+
   /* Phones: the nav sits under the wordmark as a single quiet row. */
   @media (max-width: 40rem) {
     .site-header__inner {

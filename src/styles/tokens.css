@@ -17,12 +17,11 @@
 
   /*
    * SITE SCALE. Every size on the site is in rem, so this one value sets the overall scale:
-   * 90% of the browser's default text size (16px → 14.4px). The design was made to look
-   * right at this size. It's a percentage (not px), so a visitor who sets a larger default
-   * text size, or zooms, still gets proportionally larger text. Keep body text (--text-base)
-   * at or above 16px: 1.125rem × 14.4px = 16.2px.
+   * 95% of the browser's default text size (16px → 15.2px). It's a percentage (not px), so
+   * a visitor who sets a larger default text size, or zooms, still gets proportionally
+   * larger text. Keep body text (--text-base) at or above 16px: 1.125rem × 15.2px = 17.1px.
    */
-  font-size: 90%;
+  font-size: 95%;
 
   /*
    * Palette: derived from the logo's lavender pink (#E2D5E7) and deep plum (#33253C).
