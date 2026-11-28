@@ -225,14 +225,14 @@ const fmt0 = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0
   }
   .gm-page :global(.gm-chart text) {
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: 0.75rem; /* rem, so chart text follows the site scale and browser text size */
     fill: var(--color-text-muted);
   }
   .gm-page :global(.gm-chart .gm-tick-narrow) {
-    font-size: 10.5px;
+    font-size: 0.6875rem;
   }
   .gm-page :global(.gm-chart .gm-bar-value) {
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: var(--weight-semibold);
     fill: var(--color-text);
   }

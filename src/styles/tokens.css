@@ -16,6 +16,15 @@
   color-scheme: light;
 
   /*
+   * SITE SCALE. Every size on the site is in rem, so this one value sets the overall scale:
+   * 90% of the browser's default text size (16px → 14.4px). The design was made to look
+   * right at this size. It's a percentage (not px), so a visitor who sets a larger default
+   * text size, or zooms, still gets proportionally larger text. Keep body text (--text-base)
+   * at or above 16px: 1.125rem × 14.4px = 16.2px.
+   */
+  font-size: 90%;
+
+  /*
    * Palette: derived from the logo's lavender pink (#E2D5E7) and deep plum (#33253C).
    * These are the ONLY hex values on the site; components use the role tokens below.
    * (public/favicon.svg can't read CSS variables and keeps its own colors.)
@@ -180,7 +189,7 @@
   --hero-below-inset: var(--space-8); /* gap between the buttons and the bottom of the screen */
   --hero-header-clearance: 10.5rem; /* room for the header when it wraps (phones/tablets) */
   /* Sticky header: in-page links (#…) scroll to this far below the top so the header doesn't cover them. */
-  --header-offset: 10rem; /* phones: header is about 148px (two rows) */
+  --header-offset: 10rem; /* phones: header is about 131px (two rows) */
 
   /* Logo mark in the header */
   --header-inset: var(--space-5); /* distance of the logo from the page's left edge */
@@ -203,11 +212,12 @@
 
 @media (min-width: 40rem) {
   :root {
-    --header-offset: 8.5rem; /* tablets: about 117–125px */
+    --header-offset: 8.5rem; /* 640–767px: the nav wraps, header about 111px */
   }
 }
 @media (min-width: 48rem) {
   :root {
+    --header-offset: 6rem; /* 768px and up: header is one row, about 73px */
     --gutter: var(--space-6);
   }
 }

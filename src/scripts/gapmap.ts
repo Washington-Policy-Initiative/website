@@ -147,6 +147,24 @@ async function main(): Promise<void> {
     pathById.set(f.properties.id, this as SVGPathElement);
   });
 
+  /*
+   * Outlines for the selected, keyboard-active, and hovered districts are drawn on their
+   * own layer above the map (copies of the district's shape, ignoring the pointer).
+   * The district shapes themselves are never moved in the DOM: moving the shape under the
+   * pointer to "raise" it made the browser re-fire mouseenter in a loop and drop clicks.
+   */
+  const outlineLayer = svg.append('g').attr('class', 'gm-outlines').attr('aria-hidden', 'true');
+  const makeOutline = (kind: string) =>
+    outlineLayer.append('path').attr('class', `gm-outline gm-outline--${kind}`).attr('display', 'none');
+  const selectedOutline = makeOutline('selected');
+  const activeOutline = makeOutline('active');
+  const hoverOutline = makeOutline('hover');
+  function outline(o: typeof hoverOutline, id: string | null): void {
+    const p = id ? pathById.get(id) : undefined;
+    if (p) o.attr('d', p.getAttribute('d')).attr('display', null);
+    else o.attr('display', 'none');
+  }
+
   function describe(d: DistrictData): string {
     const cat = CATEGORY_TEXT[categoryOf(d.fte[LATEST])];
     return `${d.name}${d.county ? `, ${d.county} County` : ''}: ${cat} in 2024–25 (${fmt(d.fte[LATEST], 2)} FTE).`;
@@ -180,10 +198,10 @@ async function main(): Promise<void> {
   }
 
   paths
-    .on('mouseenter', function (event: MouseEvent, f) {
+    .on('mouseenter', (event: MouseEvent, f) => {
       const d = byId.get(f.properties.id);
       if (!d) return;
-      (this as SVGPathElement).parentNode?.appendChild(this as SVGPathElement); // draw outline on top
+      outline(hoverOutline, f.properties.id);
       showTooltip(d, event.clientX, event.clientY);
     })
     .on('mousemove', (event: MouseEvent, f) => {
@@ -192,14 +210,9 @@ async function main(): Promise<void> {
     })
     .on('mouseleave', () => {
       tooltip.hidden = true;
-      raiseSelected();
+      outline(hoverOutline, null);
     })
     .on('click', (_event: MouseEvent, f) => choose(f.properties.id, { push: true, focusReport: false }));
-
-  function raiseSelected(): void {
-    const p = selectedId ? pathById.get(selectedId) : null;
-    if (p) p.parentNode?.appendChild(p);
-  }
 
   // Keyboard: the map is one tab stop; arrow keys move through districts alphabetically.
   const mapped = data.districts.filter((d) => d.shape && pathById.has(d.id));
@@ -210,11 +223,8 @@ async function main(): Promise<void> {
     if (activeIndex >= 0) pathById.get(mapped[activeIndex].id)?.classList.remove('is-active');
     activeIndex = (i + mapped.length) % mapped.length;
     const d = mapped[activeIndex];
-    const p = pathById.get(d.id);
-    if (p) {
-      p.classList.add('is-active');
-      p.parentNode?.appendChild(p);
-    }
+    pathById.get(d.id)?.classList.add('is-active');
+    outline(activeOutline, d.id);
     setText(live, `${describe(d)} Press Enter to open its report.`);
   }
 
@@ -224,6 +234,7 @@ async function main(): Promise<void> {
   });
   svgNode.addEventListener('blur', () => {
     if (activeIndex >= 0) pathById.get(mapped[activeIndex].id)?.classList.remove('is-active');
+    outline(activeOutline, null);
   });
   svgNode.addEventListener('keydown', (e) => {
     if (['ArrowDown', 'ArrowRight'].includes(e.key)) {
@@ -427,6 +438,13 @@ async function main(): Promise<void> {
     if (!(event.target as Element | null)?.closest('.gm-chart__frame')) historyHide();
   });
 
+  /**
+   * Chart dimensions are written in "design pixels" (sizes at a 16px root) and scaled by the
+   * site's root font size, so the charts follow the 90% site scale in tokens.css and a
+   * visitor's larger default text, like everything else (their text is sized in rem too).
+   */
+  const remScale = (): number => parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+
   function drawHistory(
     container: HTMLElement,
     series: { district: number[]; group: (number | null)[] | null; state: (number | null)[] },
@@ -437,8 +455,9 @@ async function main(): Promise<void> {
     // Drawn at the container's real width so text stays a readable size on phones.
     const W = Math.max(300, Math.round(container.clientWidth || 720));
     const narrow = W < 560;
-    const H = narrow ? 260 : 300;
-    const m = { top: 30, right: narrow ? 104 : 150, bottom: 34, left: 40 };
+    const k = remScale();
+    const H = Math.round((narrow ? 260 : 300) * k);
+    const m = { top: 30 * k, right: (narrow ? 104 : 150) * k, bottom: 34 * k, left: 40 * k };
     const x = scalePoint<string>().domain(data.years).range([m.left, W - m.right]);
     const all = [...series.district, ...(series.group ?? []), ...series.state].filter((v): v is number => v !== null);
     const y = scaleLinear()
@@ -496,7 +515,7 @@ async function main(): Promise<void> {
       .map((l) => ({ ...l, yPos: y(l.v ?? 0) }))
       .sort((a, b) => a.yPos - b.yPos);
     for (let i = 1; i < placed.length; i++) {
-      if (placed[i].yPos - placed[i - 1].yPos < 15) placed[i].yPos = placed[i - 1].yPos + 15;
+      if (placed[i].yPos - placed[i - 1].yPos < 15 * k) placed[i].yPos = placed[i - 1].yPos + 15 * k;
     }
     s.append('g')
       .selectAll('text')
@@ -643,8 +662,9 @@ async function main(): Promise<void> {
     localeChart.replaceChildren();
     const W = Math.max(300, Math.round(localeChart.clientWidth || 720));
     const narrow = W < 560;
-    const H = narrow ? 300 : 320;
-    const m = { top: 28, right: 4, bottom: narrow ? 62 : 48, left: 40 };
+    const k = remScale();
+    const H = Math.round((narrow ? 300 : 320) * k);
+    const m = { top: 28 * k, right: 4, bottom: (narrow ? 62 : 48) * k, left: 40 * k };
     const x = scaleBand<string>().domain(data.tiers).range([m.left, W - m.right]).padding(0.28);
     const y = scaleLinear().domain([0, 100]).range([H - m.bottom, m.top]);
     const s = select(localeChart).append('svg').attr('viewBox', `0 0 ${W} ${H}`);
@@ -838,7 +858,7 @@ async function main(): Promise<void> {
     if (selectedId) pathById.get(selectedId)?.classList.remove('is-selected');
     selectedId = id;
     pathById.get(id)?.classList.add('is-selected');
-    raiseSelected();
+    outline(selectedOutline, id);
     tbodyEl.querySelectorAll('tr.is-selected').forEach((tr) => tr.classList.remove('is-selected'));
     tbodyEl.querySelectorAll('a[aria-current]').forEach((a) => a.removeAttribute('aria-current'));
     const row = tbodyEl.querySelector<HTMLElement>(`tr[data-gm-row="${CSS.escape(id)}"]`);

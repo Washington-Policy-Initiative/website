@@ -236,15 +236,21 @@ const unmappedIn = (cat: StaffingCategory) =>
   :global(.gm-map__svg .gm-district) {
     cursor: pointer;
   }
-  /* Hovered, keyboard-active, or selected district: a thick plum outline with a light halo. */
-  :global(.gm-map__svg .gm-district.is-active),
-  :global(.gm-map__svg .gm-district:hover) {
+  /*
+   * Hovered, keyboard-active, or selected district: a thick plum outline, drawn on a layer
+   * above the map (src/scripts/gapmap.ts) so the district shapes never move. The layer
+   * ignores the pointer, so clicks and taps always reach the district underneath.
+   */
+  :global(.gm-map__svg .gm-outlines) {
+    pointer-events: none;
+  }
+  :global(.gm-map__svg .gm-outline) {
+    fill: none;
     stroke: var(--color-map-full);
     stroke-width: 2.5;
-    paint-order: stroke;
+    stroke-linejoin: round;
   }
-  :global(.gm-map__svg .gm-district.is-selected) {
-    stroke: var(--color-map-full);
+  :global(.gm-map__svg .gm-outline--selected) {
     stroke-width: 3.5;
   }
   .gm-map__tooltip {
